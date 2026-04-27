@@ -4,11 +4,11 @@ from .config import Configuration
 from .routes import router
 import logging 
 from shared.redis_connection import RedisManager
-from orchestrator import Orchestrator
+from .orchestrator import Orchestrator
 
 
 def  setup_logging():
-    logging.basicConfig(format='%(asctime) | %(name) | %(levelname) | %(message)',
+    logging.basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
 
