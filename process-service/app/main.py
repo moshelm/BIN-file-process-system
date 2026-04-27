@@ -18,11 +18,13 @@ async def lifespan(app:FastAPI):
     logger = logging.getLogger(__name__)
     try:
         config = Configuration()
-        redis = RedisManager(config.redis_url)
+        # redis = RedisManager(config.redis_url)
         manager = Orchestrator()
         app.state.manager = manager
         yield
         logger.info('server shutdown')
+        # if redis:
+        #     redis.redis.close()
     except Exception:
         logger.error('API server failed',exc_info=True)
 
