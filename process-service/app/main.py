@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from .config import Configuration
-from .routes import router
-import logging 
+
+from config import Configuration
+from fastapi import FastAPI
+from orchestrator import Orchestrator
+from routes import router
+
 from shared.redis_connection import RedisManager
-from .orchestrator import Orchestrator
 
 
 def  setup_logging():
