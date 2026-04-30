@@ -67,16 +67,9 @@ async def process_bin_files(
         response.headers["X-Process-Duration"] = str(duration)
 
         return response
-
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Server failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"server failed: {str(e)}")
-
-
-# process-service/app/main.py
-
 
 @router.get("/health")
 async def health_check():
