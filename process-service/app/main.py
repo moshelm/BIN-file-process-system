@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+import logging
 from contextlib import asynccontextmanager
 
 from config import Configuration
@@ -9,13 +9,16 @@ from routes import router
 from shared.redis_connection import RedisManager
 
 
-def  setup_logging():
-    logging.basicConfig(format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S',
-                    level=logging.INFO)
+def setup_logging():
+    logging.basicConfig(
+        format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=logging.INFO,
+    )
+
 
 @asynccontextmanager
-async def lifespan(app:FastAPI):
+async def lifespan(app: FastAPI):
     setup_logging()
     logger = logging.getLogger(__name__)
     try:
@@ -24,11 +27,12 @@ async def lifespan(app:FastAPI):
         manager = Orchestrator()
         app.state.manager = manager
         yield
-        logger.info('server shutdown')
+        logger.info("server shutdown")
         # if redis:
         #     redis.redis.close()
     except Exception:
-        logger.error('API server failed',exc_info=True)
+        logger.error("API server failed", exc_info=True)
+
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(router)

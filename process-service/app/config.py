@@ -1,6 +1,6 @@
-import os 
+import os
 
 
-class Configuration():
+class Configuration:
     def __init__(self):
-        self.redis_url = os.getenv('REDIS_URL','redis://')
+        self.redis_url = os.getenv("REDIS_URL", "redis://")

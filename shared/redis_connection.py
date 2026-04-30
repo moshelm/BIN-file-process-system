@@ -1,11 +1,12 @@
-import logging 
-from redis import Redis
-import time 
+import logging
+import time
 
+from redis import Redis
 
 logger = logging.getLogger(__name__)
 
-class RedisManager():
+
+class RedisManager:
 
     RETRY_TIMES = 3
 
@@ -26,7 +27,9 @@ class RedisManager():
                 return
 
             except (ConnectionError, TimeoutError):
-                logger.warning(f"Redis connection failed (attempt {attempt}/{self.RETRY_TIMES})")
+                logger.warning(
+                    f"Redis connection failed (attempt {attempt}/{self.RETRY_TIMES})"
+                )
                 time.sleep(2)
 
         raise ConnectionError("Failed to connect to Redis after retries")
