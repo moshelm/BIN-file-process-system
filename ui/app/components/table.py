@@ -1,23 +1,23 @@
 import flet as ft
-
-FIELDS = ["TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"]
+from shared.schemas import GPSMessageResult, GPSMessages
 
 
 class TableService:
     @staticmethod
-    def build(raw_data: list[dict], required_columns: list = FIELDS):
+    def build(data :GPSMessages ):
         columns = [
             ft.DataColumn(ft.Text(col, weight=ft.FontWeight.BOLD))
-            for col in required_columns
+            for col in GPSMessageResult.model_fields.keys()
         ]
 
         rows = []
-
-        display_data = raw_data[:1000] if len(raw_data) > 1000 else raw_data
+        records = data.messages
+        display_data : list[GPSMessageResult]= records[:1000] if len(records) > 1000 else records
 
         for row in display_data:
+            obj_row = row.model_dump()
             cells = [
-                ft.DataCell(ft.Text(str(row.get(col, "")))) for col in required_columns
+                ft.DataCell(ft.Text(str(obj_row.get(col, "")))) for col in GPSMessageResult.model_fields.keys()
             ]
             rows.append(ft.DataRow(cells=cells))
 
@@ -37,23 +37,3 @@ class TableService:
             expand=True,
             width=800,
         )
-
-
-# ft.Column([self._build_table()], expand=1, scroll=ft.ScrollMode.AUTO),
-
-# def _build_table(self):
-#         """יצירת טבלת הנתונים"""
-#         return ft.DataTable(
-#             columns=[
-#                 ft.DataColumn(ft.Text("Latitude")),
-#                 ft.DataColumn(ft.Text("Longitude")),
-#             ],
-#             rows=[
-#                 ft.DataRow(
-#                     cells=[
-#                         ft.DataCell(ft.Text(str(r["Lat"]))),
-#                         ft.DataCell(ft.Text(str(r["Lng"]))),
-#                     ]
-#                 ) for r in self.records
-#             ]
-#         )
