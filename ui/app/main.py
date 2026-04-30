@@ -1,6 +1,7 @@
 import logging
-import uvicorn
+
 import flet as ft
+import uvicorn
 from components.file_picker import PickerUploadFiles
 from components.map import MapTableView
 from components.table import TableService
@@ -47,7 +48,7 @@ def main(page: ft.Page):
                 table_container.content = TableService().build(raw_data)
 
                 page.update()
-                
+
             except Exception:
                 logger.error()
 
@@ -56,11 +57,13 @@ def main(page: ft.Page):
 
         page.add(
             result_display,
-            ft.Column([ft.Divider(), map_container, ft.Divider(), table_container], expand=True),
+            ft.Column(
+                [ft.Divider(), map_container, ft.Divider(), table_container],
+                expand=True,
+            ),
         )
     except Exception:
         logger.error()
-
 
 
 app = flet_fastapi_app(main, secret_key="dsfagw32", upload_dir="/tmp/uploads")

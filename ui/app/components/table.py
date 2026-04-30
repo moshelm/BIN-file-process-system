@@ -6,14 +6,19 @@ FIELDS = ["TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"]
 class TableService:
     @staticmethod
     def build(raw_data: list[dict], required_columns: list = FIELDS):
-        columns = [ft.DataColumn(ft.Text(col, weight=ft.FontWeight.BOLD)) for col in required_columns]
+        columns = [
+            ft.DataColumn(ft.Text(col, weight=ft.FontWeight.BOLD))
+            for col in required_columns
+        ]
 
         rows = []
 
         display_data = raw_data[:1000] if len(raw_data) > 1000 else raw_data
 
         for row in display_data:
-            cells = [ft.DataCell(ft.Text(str(row.get(col, "")))) for col in required_columns]
+            cells = [
+                ft.DataCell(ft.Text(str(row.get(col, "")))) for col in required_columns
+            ]
             rows.append(ft.DataRow(cells=cells))
 
         data_table = ft.DataTable(

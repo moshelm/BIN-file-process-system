@@ -1,8 +1,10 @@
 import os
+
 import flet as ft
 import flet_map as fmap
 
 FIELDS = {"TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"}
+
 
 class MapTableView(ft.Row):
     def __init__(self, data: list[dict], map_tile_url: str):
@@ -47,7 +49,9 @@ class MapTableView(ft.Row):
 
     def _build_map(self):
         # הגדרת מיקום מדויק כדי למנוע חסימה של אינטראקציית העכבר עם המפה
-        info_text = ft.Text(color=ft.Colors.BLACK, top=10, left=10, weight=ft.FontWeight.BOLD)
+        info_text = ft.Text(
+            color=ft.Colors.BLACK, top=10, left=10, weight=ft.FontWeight.BOLD
+        )
 
         # --- 1. יצירת רשימת קואורדינטות למסלול (הקו הרציף) ---
         path_coordinates = [
@@ -75,7 +79,9 @@ class MapTableView(ft.Row):
                 if record["Lat"] and record["Lng"]:
                     markers.append(
                         fmap.Marker(
-                            coordinates=fmap.MapLatitudeLongitude(record["Lat"], record["Lng"]),
+                            coordinates=fmap.MapLatitudeLongitude(
+                                record["Lat"], record["Lng"]
+                            ),
                             content=ft.Container(
                                 width=6,
                                 height=6,
@@ -90,9 +96,13 @@ class MapTableView(ft.Row):
             start_record = self.records[0]
             markers.append(
                 fmap.Marker(
-                    coordinates=fmap.MapLatitudeLongitude(start_record["Lat"], start_record["Lng"]),
+                    coordinates=fmap.MapLatitudeLongitude(
+                        start_record["Lat"], start_record["Lng"]
+                    ),
                     content=ft.Container(
-                        content=ft.Icon(ft.Icons.PLAY_ARROW, color=ft.Colors.WHITE, size=16),
+                        content=ft.Icon(
+                            ft.Icons.PLAY_ARROW, color=ft.Colors.WHITE, size=16
+                        ),
                         width=28,
                         height=28,
                         bgcolor=ft.Colors.GREEN,
@@ -107,7 +117,9 @@ class MapTableView(ft.Row):
             end_record = self.records[-1]
             markers.append(
                 fmap.Marker(
-                    coordinates=fmap.MapLatitudeLongitude(end_record["Lat"], end_record["Lng"]),
+                    coordinates=fmap.MapLatitudeLongitude(
+                        end_record["Lat"], end_record["Lng"]
+                    ),
                     content=ft.Container(
                         content=ft.Icon(ft.Icons.FLAG, color=ft.Colors.WHITE, size=16),
                         width=28,
@@ -154,8 +166,9 @@ class MapTableView(ft.Row):
             expand=True,
         )
 
+
 def process_telemetry_data(raw_data: list[dict], fields: set[str]):
-    extracted_data :dict[str,list[dict]]= {field: [] for field in fields}
+    extracted_data: dict[str, list[dict]] = {field: [] for field in fields}
     hover_texts = []
 
     for row in raw_data:

@@ -1,15 +1,19 @@
 import json
 import logging
 import os
+
 import flet as ft
 import httpx
+
 
 class PickerUploadFiles:
     def __init__(self, page: ft.Page, target_url_parser_service: str):
         self.logger = logging.getLogger(__name__)
         self.page = page
         self.parser_service_url = target_url_parser_service
-        self.file_picker: ft.FilePicker = ft.FilePicker(on_upload=self.on_upload_progress)
+        self.file_picker: ft.FilePicker = ft.FilePicker(
+            on_upload=self.on_upload_progress
+        )
 
         self.picked_files: list[ft.FilePickerFile] = []
         self.prog_bars: dict[str, ft.ProgressRing] = {}
@@ -38,12 +42,16 @@ class PickerUploadFiles:
             local_filepath = os.path.join(os.getcwd(), "/tmp/uploads", e.file_name)
 
             try:
-                self.logger.info("File %s uploaded locally, sending to parser...", e.file_name)
+                self.logger.info(
+                    "File %s uploaded locally, sending to parser...", e.file_name
+                )
                 async with httpx.AsyncClient() as client:
                     with open(local_filepath, "rb") as f:
                         response = await client.post(
                             self.parser_service_url,
-                            files={"file": (e.file_name, f, "application/octet-stream")},
+                            files={
+                                "file": (e.file_name, f, "application/octet-stream")
+                            },
                             timeout=30,
                         )
                         response.raise_for_status()
@@ -98,7 +106,9 @@ class PickerUploadFiles:
             upload_files = []
             for file in self.picked_files:
                 upload_url = self.page.get_upload_url(file.name, 60)
-                upload_files.append(ft.FilePickerUploadFile(upload_url=upload_url, name=file.name))
+                upload_files.append(
+                    ft.FilePickerUploadFile(upload_url=upload_url, name=file.name)
+                )
 
             await self.file_picker.upload(upload_files)
         except Exception:
