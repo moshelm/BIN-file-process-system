@@ -1,26 +1,22 @@
-import os
-
 import flet as ft
 import flet_map as fmap
-
-FIELDS = {"TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"}
+from shared.schemas import GPSMessages, GPSMessageResult
 
 
 class MapTableView(ft.Row):
-    def __init__(self, data: list[dict], map_tile_url: str):
+    def __init__(self, data: GPSMessages, map_tile_url: str):
         super().__init__()
         self.expand = True
         MAX_POINTS = 1000
 
         # נחשב קפיצה (step) כדי לפרוס את הדגימות על פני כל המערך
-        step = max(1, len(data) // MAX_POINTS)
+        step = max(1, len(data.messages) // MAX_POINTS)
 
         # ניקח נתונים בדילוגים שווים (slicing עם step)
-        self.data = data[::step]
+        self.records = data.messages[::step]
 
         self.map_tile_url = map_tile_url
 
-        self.records = self.data
         self.center_lat, self.center_lon = self._calculate_center()
 
         self.controls = [
@@ -33,31 +29,28 @@ class MapTableView(ft.Row):
         ]
 
     def _calculate_center(self):
-        """פונקציה פנימית לחישוב מרכז אזור ה-GPS"""
         if not self.records:
             return 0, 0
-        lat = sum(r["Lat"] for r in self.records) / len(self.records)
-        lon = sum(r["Lng"] for r in self.records) / len(self.records)
+        lat = sum(record.Lat for record in self.records) / len(self.records)
+        lon = sum(record.Lng for record in self.records) / len(self.records)
         return lat, lon
 
-    def on_point_click(self, info_text: ft.Text, point_data: dict):
+    def on_point_click(self, info_text: ft.Text, point_data: GPSMessageResult):
         def handler(e):
-            info_text.value = f"Speed: {point_data['Spd']} | Alt: {point_data['Alt']}"
+            info_text.value = f"Speed: {point_data.Spd} | Alt: {point_data.Alt}"
             self.page.update()
 
         return handler
 
     def _build_map(self):
-        # הגדרת מיקום מדויק כדי למנוע חסימה של אינטראקציית העכבר עם המפה
         info_text = ft.Text(
             color=ft.Colors.BLACK, top=10, left=10, weight=ft.FontWeight.BOLD
         )
 
-        # --- 1. יצירת רשימת קואורדינטות למסלול (הקו הרציף) ---
         path_coordinates = [
-            fmap.MapLatitudeLongitude(record["Lat"], record["Lng"])
+            fmap.MapLatitudeLongitude(record.Lat, record.Lng)
             for record in self.records
-            if record["Lat"] and record["Lng"]
+            if record.Lat and record.Lng
         ]
 
         polyline_layer = fmap.PolylineLayer(
@@ -76,11 +69,11 @@ class MapTableView(ft.Row):
         if self.records:
             # א. הוספת כל נקודות האמצע (חותכים את הראשונה והאחרונה בעזרת [1:-1])
             for record in self.records[1:-1]:
-                if record["Lat"] and record["Lng"]:
+                if record.Lat and record.Lng:
                     markers.append(
                         fmap.Marker(
                             coordinates=fmap.MapLatitudeLongitude(
-                                record["Lat"], record["Lng"]
+                                record.Lat, record.Lng
                             ),
                             content=ft.Container(
                                 width=6,
@@ -97,7 +90,7 @@ class MapTableView(ft.Row):
             markers.append(
                 fmap.Marker(
                     coordinates=fmap.MapLatitudeLongitude(
-                        start_record["Lat"], start_record["Lng"]
+                        start_record.Lat, start_record.Lng
                     ),
                     content=ft.Container(
                         content=ft.Icon(
@@ -118,7 +111,7 @@ class MapTableView(ft.Row):
             markers.append(
                 fmap.Marker(
                     coordinates=fmap.MapLatitudeLongitude(
-                        end_record["Lat"], end_record["Lng"]
+                        end_record.Lat, end_record.Lng
                     ),
                     content=ft.Container(
                         content=ft.Icon(ft.Icons.FLAG, color=ft.Colors.WHITE, size=16),
