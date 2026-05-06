@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-aiofiles
-pydantic
-pymavlink
-python-multipart
-redis
