@@ -2,18 +2,16 @@ services:
   parser-service:
     build: 
       context: .
-      dockerfile: process-service/Dockerfile
+      dockerfile: process_service/Dockerfile
     container_name: bin-parser
     ports:
       - "8001:8001"
-    volumes:
-      - ./process-service/app:/app
-      - ./shared:/shared     
+    deploy:
+      resources:
+        limits:
+          cpus: 2.0
     environment:
-      - PYTHONPATH=.:/
-      - PYTHONUNBUFFERED=1
-      - ENV=development
-      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONPATH=/app
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
       interval: 30s
