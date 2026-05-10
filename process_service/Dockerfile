@@ -33,4 +33,4 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8001
 
-CMD ["uvicorn", "process_service.src.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["python", "-m", "process_service.src.main"]
