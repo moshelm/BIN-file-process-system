@@ -7,12 +7,17 @@ import tempfile
 import shutil
 import uuid
 import pickle
+from pathlib import Path
 
 logger = get_logger(__name__)
 
 
 async def create_and_write_new_file_to_disc_async(file: UploadFile, temp_file_name: str):
     try:
+        file_path = Path(temp_file_name)
+        if file_path.exists() and file_path.stat().st_size > 0:
+            logger.info(f"File {temp_file_name} already exists and is not empty. Skipping write.")
+            return
         async with aiofiles.open(temp_file_name, "ab") as f:
             context : bytes = await file.read()
             await f.write(context)
