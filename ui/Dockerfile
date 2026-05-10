@@ -4,26 +4,30 @@ WORKDIR /app
 
 COPY ./ui/requirements.txt .
 
-RUN pip install --user --no-cache-dir -r requirements.txt
-
 RUN mkdir -p uploads && chmod 777 uploads
+
+RUN python -m venv /opt/venv
+
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 FROM python:3.11-slim 
 
 WORKDIR /app
 
-
-COPY --from=builder /root/.local /root/.local
+ENV PATH="/opt/venv/bin:$PATH"
+COPY --from=builder /opt/venv /opt/venv
 
 COPY --from=builder /app/uploads ./uploads
 
-COPY ./ui/app .
+COPY ./ui ./ui
+COPY ./shared ./shared
 
-ENV PATH=/root/.local/bin:$PATH
 ENV - PYTHONDONTWRITEBYTECODE=1
 ENV - PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "ui.src.main"]
