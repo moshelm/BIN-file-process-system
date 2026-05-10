@@ -25,9 +25,13 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.error("API server failed ", exc_info=True)
 
-app : FastAPI = FastAPI(lifespan=lifespan)
-app.include_router(router)
+
 
 if __name__=='__main__':
-    import uvicorn
-    uvicorn.run(app,host='0.0.0.0',port=8001)    
+    PORT = int(os.getenv("PROCESS_SERVICE_PORT","8001"))
+    HOST = os.getenv("PROCESS_SERVICE_HOST","0.0.0.0")
+    
+    app : FastAPI = FastAPI(lifespan=lifespan)
+    app.include_router(review_parsers)
+    app.include_router(gps_msgs)
+    uvicorn.run(app,host=HOST,port=PORT)    
