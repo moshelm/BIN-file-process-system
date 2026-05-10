@@ -25,16 +25,10 @@ services:
     container_name: flet_telemetry
     ports:
       - "8000:8000"
-    volumes:
-      - ./ui/app:/app
-      - ./shared:/shared
     environment:
-      - PYTHONPATH=.:/
-      - BIN_PARSER_URI=http://parser-service:8001/process
+      - PYTHONPATH=/app
       - FLET_SERVER_PORT=8000
       - FLET_SERVER_IP=0.0.0.0
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
