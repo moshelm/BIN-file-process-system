@@ -33,6 +33,6 @@ class Orchestrator:
         return await asyncio.to_thread(self.pymavlink_parser.parse_only_by_pymavlink, file_path)
     
     async def parser_file_multiprocess(self, file_path:str):
-        return await asyncio.to_thread(self.multiprocess_parser.parse, file_path)
+        return await asyncio.to_thread(self.multiprocess_parser.parse, file_path, self.ardupilot)
     
  
