@@ -8,6 +8,8 @@ class ParseStatus(str, Enum):
     PENDING = "pending" 
 
 class ParseResult(BaseModel):
+    parser_name : Optional[str] = None
+    information : Optional[str] = None
     duration: Optional[float] = None
     count : int = 0
     status : ParseStatus = ParseStatus.PENDING

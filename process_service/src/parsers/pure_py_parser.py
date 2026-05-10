@@ -19,7 +19,8 @@ class PurePythonParser:
     }
 
     def __init__(self) -> None:
-        pass
+        self.parser_name = 'pure python parser'
+        self.information = 'use in bytes'
 
     def build_struct_from_format(self, format_bytes: bytes) -> Optional[struct.Struct]:
         struct_format: str = '<'
@@ -144,19 +145,11 @@ class PurePythonParser:
         duration: float = timer_calculate(start_time)
 
         return ParseResult(
+            parser_name=self.parser_name,
+            information= self.information,
             duration=duration, 
             count=total_messages, 
             status=ParseStatus.SUCCESS, 
             file_path=file_path
         )
-    
-# if __name__ == "__main__":
-#     parser = PurePythonParser()
-
-#     file_path: str = "log_file_test_01.bin"
-
-#     print("🚀 SAFE & FAST PARSER")
-
-#     result: Dict[str, Any] = parser.parse_file(file_path)
-
-#     print(f"✅ messages: {result['messages']} | time: {result['time']} sec")
+ 

@@ -18,7 +18,8 @@ class PymavlinkParser:
     GPS_TYPE = 1
 
     def __init__(self):
-        pass
+        self.parser_name = 'pymavlink parser'
+        self.information = 'use in mavlink'
         
     def parse_only_by_pymavlink(self,file_path:str)-> ParseResult:
         try:
@@ -33,10 +34,12 @@ class PymavlinkParser:
             
             duration = timer_calculate(start_time)
 
-            return ParseResult(duration=duration, count=messages_number, status=ParseStatus.SUCCESS, file_path= file_path)
-        except Exception:
-            logger.error('failed parser')
-            return ParseResult( status=ParseStatus.FAILED, file_path= file_path)
+            return ParseResult(parser_name=self.parser_name,
+            information= self.information,duration=duration, count=messages_number, status=ParseStatus.SUCCESS, file_path= file_path)
+        except Exception as e :
+            logger.error(f'failed parser. {str(e)}')
+            return ParseResult(parser_name=self.parser_name,
+            information= self.information,status=ParseStatus.FAILED, file_path= file_path)
         
         finally:
             if mav:

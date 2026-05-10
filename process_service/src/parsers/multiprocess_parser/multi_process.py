@@ -22,7 +22,8 @@ class ParseMultiprocess:
     MSG_HEADER_PREFIX: bytes = b'\xA3\x95'
 
     def __init__(self):
-        pass
+        self.parser_name = 'multiprocess parser'
+        self.information = 'use in multi process'
         
     def parse_chunk(self,
         file_path:str,
@@ -130,8 +131,10 @@ class ParseMultiprocess:
         remove_temp_file(combined_file)
 
         return ParseResult(
+            parser_name=self.parser_name,
+            information= self.information,
             duration=duration, 
-            count=total_count, 
+            count=total_count+len(formats), 
             status=ParseStatus.SUCCESS, 
             file_path=combined_file
         )
