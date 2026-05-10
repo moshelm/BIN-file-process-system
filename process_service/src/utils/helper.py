@@ -18,5 +18,5 @@ def is_bin_file(file_name: str) -> bool:
 def timer_calculate(start_time:float):
         duration = time.perf_counter() - start_time
         logger.info(f"({int(duration//60)} min {duration%60:.2f} sec)")
-        return duration
+        return round(duration,2)
 
