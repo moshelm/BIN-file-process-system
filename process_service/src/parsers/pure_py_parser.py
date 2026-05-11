@@ -29,7 +29,7 @@ class PurePythonParser:
             python_format: List[str] = ['<']
             for char in decoded_format:
                 if char not in self.ARDU_TO_PYTHON_STRUCT:
-                    logger.warning("Unsupported format char:%s", char, extra={'unknown_format': format_str})
+                    logger.warning("Unsupported format char:%s", char, extra={'unknown_format': decoded_format})
                     raise ValueError(f"Unsupported format char: {char}")
                 python_format.append(self.ARDU_TO_PYTHON_STRUCT[char])
             return struct.Struct(''.join(python_format))
