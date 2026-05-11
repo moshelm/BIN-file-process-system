@@ -63,17 +63,28 @@ class PymavlinkParser:
                     app_msg(original_msg)
                     messages_number += 1
             for msg in messages:
-                temp_file.write(json.dumps(msg) + "\n")
+                msg_k = specific_gps_msg(msg)
+                if msg_k:
+                    temp_file.write(json.dumps(msg_k) + "\n")
             duration = timer_calculate(start_time)
             
-            return ParseResult(duration=duration, count=messages_number, status=ParseStatus.SUCCESS, file_path= file_path, json_file_result_name= temp_file.name)
+            return ParseResult(parser_name=self.parser_name, information= self.information, duration=duration, count=messages_number, status=ParseStatus.SUCCESS, file_path= file_path, json_file_result_name= temp_file.name)
         
         except Exception:
             remove_temp_file(temp_file.name)
             logger.error('failed parser',exc_info=True)
-            return ParseResult( status=ParseStatus.FAILED, file_path= file_path)
+            return ParseResult(parser_name=self.parser_name, information= self.information, status=ParseStatus.FAILED, file_path= file_path)
         
         finally:
             close_temp_file(temp_file)
             if mav:
                 mav.close()
+
+def specific_gps_msg(original_msg:dict):
+    if original_msg["I"] == 1:
+        keys_msg_to_keep = {"TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"}
+        new_dict = {
+            key: original_msg.get(key, None) for key in keys_msg_to_keep
+        }
+        return new_dict
+    return None
