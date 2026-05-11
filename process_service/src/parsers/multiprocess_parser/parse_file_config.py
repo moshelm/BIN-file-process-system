@@ -60,6 +60,7 @@ class ArduPilotParser:
                             py_fmt: str = self.serialize_to_python_format(format_str)
                             expected_len: int = struct.calcsize(py_fmt) + 3
                         except Exception:
+                            logger.error(f'failed msg_id:{msg_id}, name:{name},fmt:{format_str}')
                             position += 1
                             continue
 
@@ -87,10 +88,10 @@ class ArduPilotParser:
     def _prepare_formats_and_lens(self, fmt_dict:dict[str,dict]) -> Tuple[List[Optional[str]], List[int]]:
         formats: List[Optional[str]] = [None] * 256
         lens: List[int] = [0] * 256
-        for msg_id, v in fmt_dict.items():
-            lens[msg_id] = v["length"]
-            if v.get("python_format"):
-                formats[msg_id] = v["python_format"]
+        for msg_id, info in fmt_dict.items():
+            lens[msg_id] = info["length"]
+            if info.get("python_format"):
+                formats[msg_id] = info["python_format"]
         
         return formats, lens
     

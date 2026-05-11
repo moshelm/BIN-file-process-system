@@ -129,12 +129,14 @@ class ParseMultiprocess:
         formats, lens = ardupilot_parser.get_formats_and_length_messages(file_path)
         duration, total_count, combined_file = self.parse_file(file_path, formats, lens)
         remove_temp_file(combined_file)
-
+        
         return ParseResult(
             parser_name=self.parser_name,
             information= self.information,
             duration=duration, 
-            count=total_count+len(formats), 
+            count=total_count+sum_msgs_formats(formats), 
             status=ParseStatus.SUCCESS, 
             file_path=combined_file
         )
+def sum_msgs_formats(formats:list):
+    return len([fmt for fmt in formats if fmt is not None])
