@@ -13,51 +13,63 @@ logger = get_logger(__name__)
 
 
 class PymavlinkParser:
-    GPS_INDEX = 'I'
-    GPS_MSG = 'GPS'
+    GPS_INDEX = "I"
+    GPS_MSG = "GPS"
     GPS_TYPE = 1
 
     def __init__(self):
-        self.parser_name = 'pymavlink parser'
-        self.information = 'use in mavlink'
-        
-    def parse_only_by_pymavlink(self,file_path:str)-> ParseResult:
+        self.parser_name = "pymavlink parser"
+        self.information = "use in mavlink"
+
+    def parse_only_by_pymavlink(self, file_path: str) -> ParseResult:
         try:
             mav = DFReader.DFReader_binary(file_path)
             messages_number = mav._count
             start_time = time.perf_counter()
-            
+
             while True:
                 msg_raw = mav.recv_match(blocking=False)
                 if msg_raw is None:
                     break
-            
+
             duration = timer_calculate(start_time)
 
-            return ParseResult(parser_name=self.parser_name,
-            information= self.information,duration=duration, count=messages_number, status=ParseStatus.SUCCESS, file_path= file_path)
-        except Exception as e :
-            logger.error(f'failed parser. {str(e)}')
-            return ParseResult(parser_name=self.parser_name,
-            information= self.information,status=ParseStatus.FAILED, file_path= file_path)
-        
+            return ParseResult(
+                parser_name=self.parser_name,
+                information=self.information,
+                duration=duration,
+                count=messages_number,
+                status=ParseStatus.SUCCESS,
+                file_path=file_path,
+            )
+        except Exception as e:
+            logger.error(f"failed parser. {str(e)}")
+            return ParseResult(
+                parser_name=self.parser_name,
+                information=self.information,
+                status=ParseStatus.FAILED,
+                file_path=file_path,
+            )
+
         finally:
             if mav:
                 mav.close()
 
-    def parse_file_by_only_GPS_Messages(self, file_path:str,  gps_msg:str = GPS_MSG, gps_index: str = GPS_INDEX,gps_type:str = GPS_TYPE):
+    def parse_file_by_only_GPS_Messages(
+        self, file_path: str, gps_msg: str = GPS_MSG, gps_index: str = GPS_INDEX, gps_type: str = GPS_TYPE
+    ):
         try:
-            temp_file : _TemporaryFileWrapper = create_temporary_file()
-            start_time : float = time.perf_counter()
-            mav : DFReader.DFReader_binary = DFReader.DFReader_binary(file_path)
-            messages_number : int = 0
+            temp_file: _TemporaryFileWrapper = create_temporary_file()
+            start_time: float = time.perf_counter()
+            mav: DFReader.DFReader_binary = DFReader.DFReader_binary(file_path)
+            messages_number: int = 0
             messages = []
             app_msg = messages.append
             while True:
-                msg_raw : DFReader.DFMessage = mav.recv_match(blocking=False, type=[gps_msg])
+                msg_raw: DFReader.DFMessage = mav.recv_match(blocking=False, type=[gps_msg])
                 if msg_raw is None:
                     break
-                
+
                 original_msg: dict = msg_raw.to_dict()
                 if original_msg.get(gps_index, None) == gps_type:
                     app_msg(original_msg)
@@ -67,24 +79,36 @@ class PymavlinkParser:
                 if msg_k:
                     temp_file.write(json.dumps(msg_k) + "\n")
             duration = timer_calculate(start_time)
-            
-            return ParseResult(parser_name=self.parser_name, information= self.information, duration=duration, count=messages_number, status=ParseStatus.SUCCESS, file_path= file_path, json_file_result_name= temp_file.name)
-        
+
+            return ParseResult(
+                parser_name=self.parser_name,
+                information=self.information,
+                duration=duration,
+                count=messages_number,
+                status=ParseStatus.SUCCESS,
+                file_path=file_path,
+                json_file_result_name=temp_file.name,
+            )
+
         except Exception:
             remove_temp_file(temp_file.name)
-            logger.error('failed parser',exc_info=True)
-            return ParseResult(parser_name=self.parser_name, information= self.information, status=ParseStatus.FAILED, file_path= file_path)
-        
+            logger.error("failed parser", exc_info=True)
+            return ParseResult(
+                parser_name=self.parser_name,
+                information=self.information,
+                status=ParseStatus.FAILED,
+                file_path=file_path,
+            )
+
         finally:
             close_temp_file(temp_file)
             if mav:
                 mav.close()
 
-def specific_gps_msg(original_msg:dict):
+
+def specific_gps_msg(original_msg: dict):
     if original_msg["I"] == 1:
         keys_msg_to_keep = {"TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"}
-        new_dict = {
-            key: original_msg.get(key, None) for key in keys_msg_to_keep
-        }
+        new_dict = {key: original_msg.get(key, None) for key in keys_msg_to_keep}
         return new_dict
     return None

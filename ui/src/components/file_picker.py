@@ -9,9 +9,10 @@ from shared.schemas import GPSMessages
 
 logger = get_logger(__name__)
 
+
 class PickerUploadFiles:
-    def __init__(self, page: ft.Page): 
-        self.page : ft.Page = page
+    def __init__(self, page: ft.Page):
+        self.page: ft.Page = page
 
         self.file_picker: ft.FilePicker = ft.FilePicker()
 
@@ -31,9 +32,9 @@ class PickerUploadFiles:
             on_click=self.handle_file_upload,
             disabled=True,
         )
-        
-    def get_callback_function(self, callback : Callable[[str],GPSMessages]):
-        self.callback : Callable[[str],GPSMessages] = callback
+
+    def get_callback_function(self, callback: Callable[[str], GPSMessages]):
+        self.callback: Callable[[str], GPSMessages] = callback
 
     async def on_upload_progress(self, e: ft.FilePickerUploadEvent):
         try:
@@ -41,9 +42,7 @@ class PickerUploadFiles:
             self.page.update()
             local_filepath = os.path.join(os.getcwd(), "/tmp/uploads", e.file_name)
             if e.progress == 1.0:
-                logger.info(
-                    "File %s uploaded locally, sending to parser...", e.file_name
-                )
+                logger.info("File %s uploaded locally, sending to parser...", e.file_name)
                 await self.callback(local_filepath)
 
         except json.JSONDecodeError:
@@ -62,15 +61,15 @@ class PickerUploadFiles:
 
     async def handle_files_pick(self, e: ft.Event[ft.Button]) -> None:
         try:
-            files : list[ft.FilePickerFile]= await self.file_picker.pick_files(allow_multiple=False)
+            files: list[ft.FilePickerFile] = await self.file_picker.pick_files(allow_multiple=False)
 
-            log_files : list[dict[str, str|int]] = [{"name": file.name, "size": file.size} for file in files]
+            log_files: list[dict[str, str | int]] = [{"name": file.name, "size": file.size} for file in files]
             logger.info("Picked files:%s", log_files)
-            
+
             self.picked_files = files
             if not files:
                 logger.warning("there is no files in this upload order")
-            
+
             self.upload_button.disabled = len(files) == 0
             self.progress_circle_view.clear()
             self.upload_progress.controls.clear()
@@ -89,11 +88,9 @@ class PickerUploadFiles:
             upload_files = []
             for file in self.picked_files:
                 upload_url = self.page.get_upload_url(file.name, 60)
-                upload_files.append(
-                    ft.FilePickerUploadFile(upload_url=upload_url, name=file.name)
-                )
+                upload_files.append(ft.FilePickerUploadFile(upload_url=upload_url, name=file.name))
 
-            self.file_picker.on_upload= self.on_upload_progress
+            self.file_picker.on_upload = self.on_upload_progress
             await self.file_picker.upload(upload_files)
         except Exception:
             logger.error("failed upload", exc_info=True)

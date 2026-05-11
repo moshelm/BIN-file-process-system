@@ -27,9 +27,7 @@ class RedisManager:
                 return
 
             except (ConnectionError, TimeoutError):
-                logger.warning(
-                    f"Redis connection failed (attempt {attempt}/{self.RETRY_TIMES})"
-                )
+                logger.warning(f"Redis connection failed (attempt {attempt}/{self.RETRY_TIMES})")
                 time.sleep(2)
 
         raise ConnectionError("Failed to connect to Redis after retries")

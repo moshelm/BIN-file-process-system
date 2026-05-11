@@ -6,17 +6,16 @@ from shared.schemas import GPSMessageResult
 
 logger = get_logger(__name__)
 
+
 class MapTableViewBuilder:
     def __init__(self, data: list[GPSMessageResult], map_tile_url: str):
-        
+
         self.records = data
         self.map_tile_url = map_tile_url
         self.center_lat, self.center_lon = self._calculate_center()
-        
+
         self.info_text = ft.Text(
-            color=ft.Colors.BLACK, 
-            weight=ft.FontWeight.BOLD,
-            value="Hover over a point to see details..." 
+            color=ft.Colors.BLACK, weight=ft.FontWeight.BOLD, value="Hover over a point to see details..."
         )
 
     def _calculate_center(self):
@@ -31,7 +30,7 @@ class MapTableViewBuilder:
             point_data: GPSMessageResult = e.control.data
             if point_data:
                 self.info_text.value = f"Lat: {point_data.Lat:.2f} | Lng: {point_data.Lng:.2f}"
-                self.info_text.update()  
+                self.info_text.update()
         else:
             self.info_text.value = "Hover over a point to see details..."
             self.info_text.update()
@@ -65,49 +64,51 @@ class MapTableViewBuilder:
                 content=inner_content,
             ),
         )
+
     def create_end_point(self, record: GPSMessageResult):
         return self._create_marker(
-                        record=record,
-                        width=28,
-                        height=28,
-                        bgcolor=ft.Colors.RED,
-                        border_radius=14,
-                        tooltip=f"END | Speed: {record.Spd} | Alt: {record.Alt}",
-                        inner_content=ft.Icon(
-                            ft.Icons.FLAG,
-                            color=ft.Colors.WHITE,
-                            size=16,
-                        ),
-                    )
-                
+            record=record,
+            width=28,
+            height=28,
+            bgcolor=ft.Colors.RED,
+            border_radius=14,
+            tooltip=f"END | Speed: {record.Spd} | Alt: {record.Alt}",
+            inner_content=ft.Icon(
+                ft.Icons.FLAG,
+                color=ft.Colors.WHITE,
+                size=16,
+            ),
+        )
+
     def create_start_point(self, record: GPSMessageResult):
-        return  self._create_marker(
-                        record=record,
-                        width=28,
-                        height=28,
-                        bgcolor=ft.Colors.GREEN,
-                        border_radius=14,
-                        tooltip=f"START | Speed: {record.Spd} | Alt: {record.Alt}",
-                        inner_content=ft.Icon(
-                            ft.Icons.PLAY_ARROW,
-                            color=ft.Colors.WHITE,
-                            size=16,
-                        ),
-                    )
-    def create_point(self, record:GPSMessageResult):
         return self._create_marker(
-                        record=record,
-                        width=16,
-                        height=16,
-                        tooltip=f"Speed: {record.Spd} | Alt: {record.Alt}",
-                        inner_content=ft.Container(
-                            width=6,
-                            height=6,
-                            bgcolor=ft.Colors.BLUE,
-                            border_radius=16,
-                        ),
-                    )
-                
+            record=record,
+            width=28,
+            height=28,
+            bgcolor=ft.Colors.GREEN,
+            border_radius=14,
+            tooltip=f"START | Speed: {record.Spd} | Alt: {record.Alt}",
+            inner_content=ft.Icon(
+                ft.Icons.PLAY_ARROW,
+                color=ft.Colors.WHITE,
+                size=16,
+            ),
+        )
+
+    def create_point(self, record: GPSMessageResult):
+        return self._create_marker(
+            record=record,
+            width=16,
+            height=16,
+            tooltip=f"Speed: {record.Spd} | Alt: {record.Alt}",
+            inner_content=ft.Container(
+                width=6,
+                height=6,
+                bgcolor=ft.Colors.BLUE,
+                border_radius=16,
+            ),
+        )
+
     def build(self) -> ft.Column:
         path_coordinates: list[fmap.MapLatitudeLongitude] = []
         markers: list[fmap.Marker] = []
@@ -124,7 +125,7 @@ class MapTableViewBuilder:
 
             path_coordinates.append(coordinates)
 
-            is_start = index == 0 
+            is_start = index == 0
             is_end = index == len(self.records) - 1
 
             if is_start:

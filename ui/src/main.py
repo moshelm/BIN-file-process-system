@@ -11,12 +11,13 @@ from ui.src.views.dashboard_view import DashboardView
 
 logger = get_logger(__name__)
 
+
 def main(page: ft.Page):
     try:
-        view : DashboardView = DashboardView(page)
+        view: DashboardView = DashboardView(page)
 
-        controller : DashboardController = DashboardController(view, config_data)
-        
+        controller: DashboardController = DashboardController(view, config_data)
+
         controller.create_picker()
 
         view.build()
@@ -24,14 +25,13 @@ def main(page: ft.Page):
         page.add(view.layout)
 
     except Exception:
-        logger.error('failed running',exc_info=True)
-
+        logger.error("failed running", exc_info=True)
 
 
 if __name__ == "__main__":
-    PORT = int(os.getenv("PROCESS_SERVICE_PORT","8000"))
-    HOST = os.getenv("PROCESS_SERVICE_HOST","0.0.0.0")
-    SECRET_KEY = os.getenv("SECRET_KEY_FLET_UI","dsfagw32")
+    PORT = int(os.getenv("PROCESS_SERVICE_PORT", "8000"))
+    HOST = os.getenv("PROCESS_SERVICE_HOST", "0.0.0.0")
+    SECRET_KEY = os.getenv("SECRET_KEY_FLET_UI", "dsfagw32")
 
     app = flet_fastapi_app(main, secret_key=SECRET_KEY, upload_dir="/tmp/uploads")
 

@@ -15,10 +15,12 @@ router = APIRouter()
 
 def get_manager(request: Request):
     return request.app.state.manager
-    
+
+
 def headers_handling(response: FileResponse, count: int, duration: str):
     response.headers["X-Total-Count"] = str(count)
     response.headers["X-Process-Duration"] = str(duration)
+
 
 @router.post("/process_gps_messages", status_code=200)
 async def process_bin_files(
@@ -31,19 +33,21 @@ async def process_bin_files(
             raise HTTPException(status_code=401, detail="only .bin format")
 
         temp_file_path = str(Path(f"/tmp/{file.filename}"))
-        
-        await create_and_write_new_file_to_disc_async(file, temp_file_path)
-        
-        parse_gps_result : ParseResult = await manager.parser_gps_messages(temp_file_path)
 
-        if parse_gps_result.status == ParseStatus.FAILED: 
-            raise HTTPException(status_code=500, detail='failed process this file')
-        
-        logger.info(f"File processed successfully | Total messages: {parse_gps_result.count} | Time: {parse_gps_result.duration}")
+        await create_and_write_new_file_to_disc_async(file, temp_file_path)
+
+        parse_gps_result: ParseResult = await manager.parser_gps_messages(temp_file_path)
+
+        if parse_gps_result.status == ParseStatus.FAILED:
+            raise HTTPException(status_code=500, detail="failed process this file")
+
+        logger.info(
+            f"File processed successfully | Total messages: {parse_gps_result.count} | Time: {parse_gps_result.duration}"
+        )
         file_path = parse_gps_result.json_file_result_name
-        
+
         response = None
-        
+
         if file_path is None:
             response = parse_gps_result
         else:
@@ -57,7 +61,7 @@ async def process_bin_files(
             )
         headers_handling(response, parse_gps_result.count, parse_gps_result.duration)
         return response
-    
+
     except Exception as e:
         logger.error(f"Server failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="server failed")
