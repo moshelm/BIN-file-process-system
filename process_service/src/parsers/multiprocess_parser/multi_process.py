@@ -1,16 +1,17 @@
-import struct
 import mmap
 import os
-import time 
+import struct
 import tempfile
-
-from process_service.src.utils.file_handling import remove_temp_file, write_to_temp_file_pickle, combine_files_zero_copy, get_size_file
-from process_service.src.utils.helper import timer_calculate
+import time
 from multiprocessing import Pool, cpu_count
-from typing import Dict, List, Tuple, Optional, Any
-from shared.schemas import ParseResult, ParseStatus
-from shared.logger_config import get_logger
+from typing import Any, Dict, List, Optional, Tuple
+
 from process_service.src.parsers.multiprocess_parser.parse_file_config import ArduPilotParser
+from process_service.src.utils.file_handling import (combine_files_zero_copy, get_size_file, remove_temp_file,
+                                                     write_to_temp_file_pickle)
+from process_service.src.utils.helper import timer_calculate
+from shared.logger_config import get_logger
+from shared.schemas import ParseResult, ParseStatus
 
 logger = get_logger(__name__)
 

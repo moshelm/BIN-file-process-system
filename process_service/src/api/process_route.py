@@ -1,19 +1,13 @@
 from pathlib import Path
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    HTTPException,
-    Request,
-    UploadFile,
-)
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi.responses import StreamingResponse
+
+from process_service.src.orchestrator import Orchestrator
+from process_service.src.utils.file_handling import create_and_write_new_file_to_disc_async, remove_temp_file
+from process_service.src.utils.helper import is_bin_file
 from shared.logger_config import get_logger
 from shared.schemas import ParseResult, ParseStatus
-from fastapi.responses import StreamingResponse
-from process_service.src.orchestrator import Orchestrator
-from process_service.src.utils.helper import is_bin_file
-from process_service.src.utils.file_handling import create_and_write_new_file_to_disc_async, remove_temp_file
-
 
 logger = get_logger(__name__)
 router = APIRouter()

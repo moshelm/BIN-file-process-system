@@ -1,6 +1,7 @@
-import struct
 import mmap
-from typing import Dict, List, Tuple, Optional, Any
+import struct
+from typing import Any, Dict, List, Optional, Tuple
+
 from shared.logger_config import get_logger
 
 logger = get_logger(__name__)

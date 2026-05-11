@@ -1,13 +1,13 @@
+import os
 from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI
-import os 
 
-from shared.logger_config import get_logger
-from process_service.src.orchestrator import Orchestrator
-from process_service.src.api.process_route import router as review_parsers
 from process_service.src.api.gps_route import router as gps_msgs
-
+from process_service.src.api.process_route import router as review_parsers
+from process_service.src.orchestrator import Orchestrator
+from shared.logger_config import get_logger
 
 logger = get_logger(__name__)
 

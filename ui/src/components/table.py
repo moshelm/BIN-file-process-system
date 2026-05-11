@@ -1,4 +1,5 @@
 import flet as ft
+
 from shared.schemas import GPSMessageResult, GPSMessages
 
 

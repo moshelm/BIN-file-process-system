@@ -1,11 +1,12 @@
+from typing import Callable
+
 import flet as ft
+
+from shared.logger_config import get_logger
+from shared.schemas import GPSMessages
 from ui.src.components.file_picker import PickerUploadFiles
 from ui.src.components.map import MapTableViewBuilder
 from ui.src.components.table import create_table
-
-from typing import Callable
-from shared.schemas import GPSMessages
-from shared.logger_config import get_logger
 
 logger = get_logger(__name__)
 

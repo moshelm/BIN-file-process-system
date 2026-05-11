@@ -1,10 +1,12 @@
+import json
+
+import flet as ft
+
+from shared.logger_config import get_logger
+from shared.schemas import GPSMessageResult, GPSMessages
+from ui.src.services.api_client import ApiClient
 from ui.src.utils.config import ConfigJsonFile
 from ui.src.views.dashboard_view import DashboardView
-from ui.src.services.api_client import ApiClient
-from shared.schemas import GPSMessages, GPSMessageResult
-from shared.logger_config import get_logger
-import flet as ft
-import json
 
 logger = get_logger(__name__)
 

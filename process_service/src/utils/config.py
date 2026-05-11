@@ -1,5 +1,7 @@
-from shared.read_json import read_json_file
 from pydantic import BaseModel
+
+from shared.read_json import read_json_file
+
 
 class ConfigJsonFile(BaseModel):
     redis_url : str

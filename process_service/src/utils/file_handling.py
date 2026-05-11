@@ -1,13 +1,15 @@
-from fastapi import UploadFile
-import aiofiles
-import os 
-from shared.logger_config import get_logger
-from tempfile import _TemporaryFileWrapper
-import tempfile
-import shutil
-import uuid
+import os
 import pickle
+import shutil
+import tempfile
+import uuid
 from pathlib import Path
+from tempfile import _TemporaryFileWrapper
+
+import aiofiles
+from fastapi import UploadFile
+
+from shared.logger_config import get_logger
 
 logger = get_logger(__name__)
 

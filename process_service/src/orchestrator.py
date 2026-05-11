@@ -1,10 +1,10 @@
 import asyncio
+
+from process_service.src.parsers.multiprocess_parser.multi_process import ArduPilotParser, ParseMultiprocess
+from process_service.src.parsers.pure_py_parser import PurePythonParser
+from process_service.src.parsers.pymavlink_parser.process import PymavlinkParser
 from shared.logger_config import get_logger
 from shared.schemas import ParseResult
-from process_service.src.parsers.pymavlink_parser.process import PymavlinkParser
-from process_service.src.parsers.multiprocess_parser.multi_process import ParseMultiprocess
-from process_service.src.parsers.multiprocess_parser.multi_process import ArduPilotParser
-from process_service.src.parsers.pure_py_parser import PurePythonParser
 
 logger = get_logger(__name__)
 

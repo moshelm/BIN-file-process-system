@@ -1,13 +1,13 @@
+import json
+import time
+from tempfile import _TemporaryFileWrapper
+
 from pymavlink import DFReader
+
+from process_service.src.utils.file_handling import close_temp_file, create_temporary_file, remove_temp_file
+from process_service.src.utils.helper import timer_calculate
 from shared.logger_config import get_logger
 from shared.schemas import ParseResult, ParseStatus
-from process_service.src.utils.helper import timer_calculate
-from process_service.src.utils.file_handling import close_temp_file, create_temporary_file, remove_temp_file
-import time
-
-from tempfile import _TemporaryFileWrapper
-import json 
-
 
 logger = get_logger(__name__)
 

@@ -1,10 +1,12 @@
+import mmap
 import struct
 import time
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
+from process_service.src.utils.helper import timer_calculate
 from shared.logger_config import get_logger
 from shared.schemas import ParseResult, ParseStatus
-from process_service.src.utils.helper import timer_calculate
-import mmap
+
 logger = get_logger(__name__)
 
 class PurePythonParser:

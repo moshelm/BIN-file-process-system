@@ -1,6 +1,7 @@
-import json 
+import json
+from pathlib import Path
+
 from shared.logger_config import get_logger
-from pathlib import Path 
 
 logger = get_logger(__name__)
 

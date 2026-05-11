@@ -1,13 +1,13 @@
+import os
+
 import flet as ft
 import uvicorn
-from shared.logger_config import get_logger
 from flet_web.fastapi import app as flet_fastapi_app
-from ui.src.views.dashboard_view import DashboardView
+
+from shared.logger_config import get_logger
 from ui.src.controllers.dashboard_controller import DashboardController
 from ui.src.utils.config import config_data
-import os 
-
-
+from ui.src.views.dashboard_view import DashboardView
 
 logger = get_logger(__name__)
 

@@ -1,7 +1,8 @@
 import flet as ft
 import flet_map as fmap
-from shared.schemas import GPSMessageResult
+
 from shared.logger_config import get_logger
+from shared.schemas import GPSMessageResult
 
 logger = get_logger(__name__)
 

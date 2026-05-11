@@ -1,7 +1,7 @@
-import os 
-from shared.logger_config import get_logger
-import time 
+import os
+import time
 
+from shared.logger_config import get_logger
 
 logger = get_logger(__name__)
 

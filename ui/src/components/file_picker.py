@@ -1,9 +1,11 @@
 import json
 import os
 from typing import Callable
+
 import flet as ft
-from shared.schemas import GPSMessages
+
 from shared.logger_config import get_logger
+from shared.schemas import GPSMessages
 
 logger = get_logger(__name__)
 
