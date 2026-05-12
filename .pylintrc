@@ -1,0 +1,33 @@
+[MASTER]
+ignore=venv,.venv,__pycache__,build,dist
+jobs=0
+persistent=yes
+
+[MESSAGES CONTROL]
+disable=
+    logging-fstring-interpolation,
+    broad-exception-caught,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    duplicate-code
+
+[FORMAT]
+max-line-length=120
+
+[DESIGN]
+max-args=8
+max-locals=30
+max-returns=6
+max-branches=15
+max-positional-arguments=8
+max-attributes=12
+[TYPECHECK]
+ignored-modules=flet,flet_map
+
+[REPORTS]
+score=yes
+
+[BASIC]
+good-names=i,j,k,x,y,id,db,fp,dt

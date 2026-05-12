@@ -1,11 +1,26 @@
+from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel
 
 
-class MessageBin(BaseModel):
-    pass
+class ParseStatus(str, Enum):
+    SUCCESS = "success"
+    FAILED = "failed"
+    PENDING = "pending"
 
 
-class GPSMessageResult(BaseModel):
+class ParseResult(BaseModel):
+    parser_name: Optional[str] = None
+    information: Optional[str] = None
+    duration: Optional[float] = None
+    count: int = 0
+    status: ParseStatus = ParseStatus.PENDING
+    file_path: Optional[str] = None
+    json_file_result_name: Optional[str] = None
+
+
+class GPSMessageResult(BaseModel):  # check what this fields say
     TimeUS: int
     Status: int
     Lat: float
