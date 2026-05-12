@@ -104,9 +104,9 @@ class ArduPilotParser:
             logger.exception("failed scan fmt messages")
             return {}
 
-    def _prepare_formats_and_lens(self, fmt_dict: dict[int, dict]) -> Tuple[List[int], List[int]] | None:
+    def _prepare_formats_and_lens(self, fmt_dict: dict[int, dict]) -> Tuple[List[str], List[int]] | None:
         try:
-            formats: List[int] = [-1] * 256
+            formats: List[str] = [''] * 256
             lens: List[int] = [0] * 256
             for msg_id, info in fmt_dict.items():
                 lens[msg_id] = info["length"]
@@ -118,7 +118,7 @@ class ArduPilotParser:
             logger.error("failed analyze formats and lans")
             return None
 
-    def get_formats_and_length_messages(self, file_path: str) -> Tuple[List[int], List[int]] | None:
+    def get_formats_and_length_messages(self, file_path: str) -> Tuple[List[str], List[int]] | None:
         try:
             fmt_dict = self.scan_fmt_messages(file_path)
             return self._prepare_formats_and_lens(fmt_dict)
