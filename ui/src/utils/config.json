@@ -1,0 +1,5 @@
+{
+    "bin_parser_gps"  : "http://parser-service:8001/process_gps_messages",
+    "bin_parsers_review"  : "http://parser-service:8001/process_file",
+    "map_tile_url" : "https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+}
