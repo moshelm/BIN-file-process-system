@@ -147,5 +147,5 @@ class ParseMultiprocess:
             )
 
 
-def sum_msgs_formats(formats: list) -> int:
-    return len([fmt for fmt in formats if fmt is not None])
+def sum_msgs_formats(formats: list[str]) -> int:
+    return len([fmt for fmt in formats if fmt ])
