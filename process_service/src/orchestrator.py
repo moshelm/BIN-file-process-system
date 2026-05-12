@@ -1,4 +1,5 @@
 import asyncio
+from typing import AsyncGenerator
 
 from process_service.src.parsers.multiprocess_parser.multi_process import ArduPilotParser, ParseMultiprocess
 from process_service.src.parsers.pure_py_parser import PurePythonParser
@@ -10,13 +11,13 @@ logger = get_logger(__name__)
 
 
 class Orchestrator:
-    def __init__(self):
+    def __init__(self) -> None:
         self.pymavlink_parser = PymavlinkParser()
         self.multiprocess_parser = ParseMultiprocess()
         self.python_parser = PurePythonParser()
         self.ardupilot = ArduPilotParser()
 
-    async def do_all_parsers(self, file_path: str):
+    async def do_all_parsers(self, file_path: str) -> AsyncGenerator[ParseResult, None]:
         res = await self.parser_pure_python(file_path)
         yield res
         res = await self.parser_file_multiprocess(file_path)
@@ -25,7 +26,7 @@ class Orchestrator:
         yield res
 
     async def parser_gps_messages(self, file_path: str) -> ParseResult:
-        return await asyncio.to_thread(self.pymavlink_parser.parse_file_by_only_GPS_Messages, file_path)
+        return await asyncio.to_thread(self.pymavlink_parser.parse_file_by_only_gps_messages, file_path)
 
     async def parser_pure_python(self, file_path: str) -> ParseResult:
         return await asyncio.to_thread(self.python_parser.parse_file, file_path)
@@ -33,5 +34,5 @@ class Orchestrator:
     async def parser_all_file_mavlink(self, file_path: str) -> ParseResult:
         return await asyncio.to_thread(self.pymavlink_parser.parse_only_by_pymavlink, file_path)
 
-    async def parser_file_multiprocess(self, file_path: str):
+    async def parser_file_multiprocess(self, file_path: str) -> ParseResult:
         return await asyncio.to_thread(self.multiprocess_parser.parse, file_path, self.ardupilot)

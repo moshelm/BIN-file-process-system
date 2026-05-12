@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Optional
 
 from redis import Redis
 
@@ -12,10 +13,10 @@ class RedisManager:
 
     def __init__(self, redis_uri: str):
         self.redis_uri = redis_uri
-        self.redis = None
+        self.redis: Optional[Redis] = None
         self._connect()
 
-    def _connect(self):
+    def _connect(self) -> None:
         for attempt in range(1, self.RETRY_TIMES + 1):
             try:
                 self.redis = Redis.from_url(self.redis_uri)

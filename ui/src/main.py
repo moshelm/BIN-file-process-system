@@ -12,7 +12,7 @@ from ui.src.views.dashboard_view import DashboardView
 logger = get_logger(__name__)
 
 
-def main(page: ft.Page):
+def main(page: ft.Page) -> None:
     try:
         view: DashboardView = DashboardView(page)
 
@@ -21,6 +21,9 @@ def main(page: ft.Page):
         controller.create_picker()
 
         view.build()
+
+        if view.layout is None:
+            raise ValueError("layout cannot be None")
 
         page.add(view.layout)
 

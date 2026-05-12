@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 import uvicorn
 from fastapi import FastAPI
@@ -13,10 +14,10 @@ logger = get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app_api: FastAPI) -> AsyncGenerator[None, None]:
     try:
         manager = Orchestrator()
-        app.state.manager = manager
+        app_api.state.manager = manager
 
         yield
 

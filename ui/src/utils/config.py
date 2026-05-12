@@ -9,4 +9,4 @@ class ConfigJsonFile(BaseModel):
     map_tile_url: str = "https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
 
 
-config_data = ConfigJsonFile(**read_json_file("ui/src/utils/config.json"))
+config_data = ConfigJsonFile(**(read_json_file("ui/src/utils/config.json") or {}))

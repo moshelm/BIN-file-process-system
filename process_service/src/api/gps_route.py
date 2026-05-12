@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
@@ -9,17 +10,18 @@ from process_service.src.utils.helper import is_bin_file
 from shared.logger_config import get_logger
 from shared.schemas import ParseResult, ParseStatus
 
+# mypy: disable-error-code=no-untyped-def
 logger = get_logger(__name__)
 router = APIRouter()
 
 
-def get_manager(request: Request):
+def get_manager(request: Request) -> Orchestrator:
     return request.app.state.manager
 
 
-def headers_handling(response: FileResponse, count: int, duration: str):
+def headers_handling(response: FileResponse, count: int, duration: float | None) -> None:
     response.headers["X-Total-Count"] = str(count)
-    response.headers["X-Process-Duration"] = str(duration)
+    response.headers["X-Process-Duration"] = str(duration) if duration else "NULL"
 
 
 @router.post("/process_gps_messages", status_code=200)
@@ -41,12 +43,11 @@ async def process_bin_files(
         if parse_gps_result.status == ParseStatus.FAILED:
             raise HTTPException(status_code=500, detail="failed process this file")
 
-        logger.info(
-            f"File processed successfully | Total messages: {parse_gps_result.count} | Time: {parse_gps_result.duration}"
-        )
+        logger.info(f"File processed successfully | Total messages: \
+              {parse_gps_result.count} | Time: {parse_gps_result.duration}")
         file_path = parse_gps_result.json_file_result_name
 
-        response = None
+        response: Optional[ParseResult | FileResponse] = None
 
         if file_path is None:
             response = parse_gps_result
@@ -59,9 +60,9 @@ async def process_bin_files(
                 media_type="application/x-jsonlines",
                 filename="gps_filtered_data.jsonl",
             )
-        headers_handling(response, parse_gps_result.count, parse_gps_result.duration)
+            headers_handling(response, parse_gps_result.count, parse_gps_result.duration)
         return response
 
     except Exception as e:
         logger.error(f"Server failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="server failed")
+        raise HTTPException(status_code=500, detail="server failed") from e

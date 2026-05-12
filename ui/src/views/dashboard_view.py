@@ -1,9 +1,9 @@
-from typing import Callable
+from typing import Callable, Optional
 
 import flet as ft
 
 from shared.logger_config import get_logger
-from shared.schemas import GPSMessages
+from shared.schemas import GPSMessageResult
 from ui.src.components.file_picker import PickerUploadFiles
 from ui.src.components.map import MapTableViewBuilder
 from ui.src.components.table import create_table
@@ -12,9 +12,9 @@ logger = get_logger(__name__)
 
 
 class DashboardView:
-    def __init__(self, page: ft.Page):
+    def __init__(self, page: ft.Page) -> None:
         self.page: ft.Page = page
-        self.layout: None = None
+        self.layout: Optional[ft.ResponsiveRow] = None
         self.sidebar_column: ft.Column = ft.Column(spacing=10)
         self.result_display: ft.Text = ft.Text()
         self.picker_files_container: ft.Container = ft.Container(height=100, width=800)
@@ -25,12 +25,12 @@ class DashboardView:
 
         self.picker_file = PickerUploadFiles(self.page)
 
-    def _initialize_page(self):
+    def _initialize_page(self) -> None:
         self.page.title = "GPS Telemetry Dashboard"
         self.page.theme_mode = ft.ThemeMode.DARK
-        self.page.scroll = "auto"
+        self.page.scroll = ft.ScrollMode.AUTO
 
-    def build(self):
+    def build(self) -> None:
         # 1. התוכן הראשי (בלי שום expand!)
         main_content = ft.Column(
             [
@@ -48,7 +48,6 @@ class DashboardView:
             content=self.sidebar_column, padding=10, border=ft.Border(left=ft.BorderSide(1, ft.Colors.OUTLINE))
         )
 
-        # 3. הפריסה הראשית בעזרת ResponsiveRow - הכי יציב שיש
         self.layout = ft.ResponsiveRow(
             controls=[
                 # צד שמאל: תופס 9 מתוך 12 חלקים במסכים בינוניים/גדולים (ו-12 במסכים קטנים)
@@ -59,7 +58,7 @@ class DashboardView:
             vertical_alignment=ft.CrossAxisAlignment.START,
         )
 
-    def update_sidebar(self, cards_items: list[ft.Card]):
+    def update_sidebar(self, cards_items: list[ft.Card]) -> None:
         try:
             self.sidebar_column.controls.clear()
 
@@ -71,7 +70,7 @@ class DashboardView:
         except Exception as e:
             logger.error(f"failed update sidebar: {e}")
 
-    def show_error(self, msg: str):
+    def show_error(self, msg: str) -> None:
         try:
             self.result_display.value = msg
             self.result_display.color = "red"
@@ -79,7 +78,7 @@ class DashboardView:
         except Exception:
             logger.error("show_error failed")
 
-    def show_success(self):
+    def show_success(self) -> None:
         try:
             self.result_display.value = "Loaded successfully"
             self.result_display.color = "green"
@@ -87,7 +86,7 @@ class DashboardView:
         except Exception:
             logger.error("show_success failed")
 
-    def update_map(self, data: GPSMessages, tile_url: str):
+    def update_map(self, data: list[GPSMessageResult], tile_url: str) -> None:
         try:
             map_component = MapTableViewBuilder(data, tile_url)
 
@@ -96,14 +95,14 @@ class DashboardView:
             logger.error("failed create map")
             raise
 
-    def create_table_view(self, data: GPSMessages):
+    def create_table_view(self, data: list[GPSMessageResult]) -> None:
         try:
             self.table_container.content = create_table(data)
         except Exception:
             logger.error("failed create table")
             raise
 
-    def create_picker_files(self, callback: Callable):
+    def create_picker_files(self, callback: Callable) -> None:
         try:
             self.picker_file.get_callback_function(callback)
 

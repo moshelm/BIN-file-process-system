@@ -18,14 +18,14 @@ class MapTableViewBuilder:
             color=ft.Colors.BLACK, weight=ft.FontWeight.BOLD, value="Hover over a point to see details..."
         )
 
-    def _calculate_center(self):
+    def _calculate_center(self) -> tuple[float, float]:
         if not self.records:
-            return 0, 0
+            return 0.0, 0.0
         center_lat = sum(record.Lat for record in self.records) / len(self.records)
         center_lon = sum(record.Lng for record in self.records) / len(self.records)
         return center_lat, center_lon
 
-    def handle_point_hover(self, e: ft.Event[ft.Button]):
+    def handle_point_hover(self, e: ft.Event[ft.Container]) -> None:
         if e.data == "true":
             point_data: GPSMessageResult = e.control.data
             if point_data:
@@ -65,7 +65,7 @@ class MapTableViewBuilder:
             ),
         )
 
-    def create_end_point(self, record: GPSMessageResult):
+    def create_end_point(self, record: GPSMessageResult) -> fmap.Marker:
         return self._create_marker(
             record=record,
             width=28,
@@ -80,7 +80,7 @@ class MapTableViewBuilder:
             ),
         )
 
-    def create_start_point(self, record: GPSMessageResult):
+    def create_start_point(self, record: GPSMessageResult) -> fmap.Marker:
         return self._create_marker(
             record=record,
             width=28,
@@ -95,7 +95,7 @@ class MapTableViewBuilder:
             ),
         )
 
-    def create_point(self, record: GPSMessageResult):
+    def create_point(self, record: GPSMessageResult) -> fmap.Marker:
         return self._create_marker(
             record=record,
             width=16,

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Callable
+from typing import Awaitable, Callable, Optional
 
 import flet as ft
 
@@ -11,14 +11,14 @@ logger = get_logger(__name__)
 
 
 class PickerUploadFiles:
-    def __init__(self, page: ft.Page):
+    def __init__(self, page: ft.Page) -> None:
         self.page: ft.Page = page
 
         self.file_picker: ft.FilePicker = ft.FilePicker()
 
         self.picked_files: list[ft.FilePickerFile] = []
         self.progress_circle_view: dict[str, ft.ProgressRing] = {}
-        self.callback = None
+        self.callback: Optional[Callable[[str], Awaitable[GPSMessages]]] = None
 
         self.button_pick = ft.Button(
             content="Select files...",
@@ -33,16 +33,19 @@ class PickerUploadFiles:
             disabled=True,
         )
 
-    def get_callback_function(self, callback: Callable[[str], GPSMessages]):
-        self.callback: Callable[[str], GPSMessages] = callback
+    def get_callback_function(self, callback: Callable[[str], Awaitable[GPSMessages]] | None) -> None:
+        self.callback = callback
 
-    async def on_upload_progress(self, e: ft.FilePickerUploadEvent):
+    async def on_upload_progress(self, e: ft.FilePickerUploadEvent) -> None:
         try:
             self.progress_circle_view[e.file_name].value = e.progress
             self.page.update()
             local_filepath = os.path.join(os.getcwd(), "/tmp/uploads", e.file_name)
             if e.progress == 1.0:
                 logger.info("File %s uploaded locally, sending to parser...", e.file_name)
+                if self.callback is None:
+                    raise ValueError("callback cannot be None")
+
                 await self.callback(local_filepath)
 
         except json.JSONDecodeError:
@@ -59,7 +62,7 @@ class PickerUploadFiles:
                 os.remove(local_filepath)
                 logger.info("Cleaned up temporary file: %s", local_filepath)
 
-    async def handle_files_pick(self, e: ft.Event[ft.Button]) -> None:
+    async def handle_files_pick(self, e: ft.Event[ft.Button]) -> None:  # pylint: disable=unused-argument
         try:
             files: list[ft.FilePickerFile] = await self.file_picker.pick_files(allow_multiple=False)
 
@@ -81,7 +84,7 @@ class PickerUploadFiles:
         except Exception:
             logger.error("failed pick files", exc_info=True)
 
-    async def handle_file_upload(self, e: ft.Event[ft.Button]):
+    async def handle_file_upload(self, e: ft.Event[ft.Button]) -> None:  # pylint: disable=unused-argument
         try:
             self.upload_button.disabled = True
             os.makedirs("/tmp/uploads", exist_ok=True)
@@ -95,7 +98,7 @@ class PickerUploadFiles:
         except Exception:
             logger.error("failed upload", exc_info=True)
 
-    def create_picker_file_view(self):
+    def create_picker_file_view(self) -> ft.Column:
         return ft.Column(
             controls=[
                 self.button_pick,

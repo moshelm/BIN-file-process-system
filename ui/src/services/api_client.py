@@ -17,7 +17,7 @@ class ApiClient:
     def __init__(self, base_url: str):
         self.base_url: str = base_url
 
-    async def get_information_about_parsers(self, url: str, local_filepath: str) -> AsyncIterator[dict]:
+    async def get_information_about_parsers(self, url: str, local_filepath: str) -> AsyncIterator[str]:
         try:
             async with httpx.AsyncClient() as client:
                 with open(local_filepath, "rb") as file:
@@ -53,7 +53,7 @@ class ApiClient:
 
                     if messages is None:
                         logger.warning("there is no data from this url")
-                        raise
+                        raise ValueError("messages cannot be None")
 
                     return messages
         except json.JSONDecodeError:

@@ -1,6 +1,7 @@
 import json
 import time
 from tempfile import _TemporaryFileWrapper
+from typing import Any
 
 from pymavlink import DFReader
 
@@ -13,18 +14,18 @@ logger = get_logger(__name__)
 
 
 class PymavlinkParser:
-    GPS_INDEX = "I"
-    GPS_MSG = "GPS"
-    GPS_TYPE = 1
+    GPS_INDEX: str = "I"
+    GPS_MSG: str = "GPS"
+    GPS_TYPE: int = 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.parser_name = "pymavlink parser"
         self.information = "use in mavlink"
 
     def parse_only_by_pymavlink(self, file_path: str) -> ParseResult:
         try:
             mav = DFReader.DFReader_binary(file_path)
-            messages_number = mav._count
+            messages_number = mav._count  # pylint: disable=protected-access
             start_time = time.perf_counter()
 
             while True:
@@ -55,15 +56,15 @@ class PymavlinkParser:
             if mav:
                 mav.close()
 
-    def parse_file_by_only_GPS_Messages(
-        self, file_path: str, gps_msg: str = GPS_MSG, gps_index: str = GPS_INDEX, gps_type: str = GPS_TYPE
-    ):
+    def parse_file_by_only_gps_messages(
+        self, file_path: str, gps_msg: str = GPS_MSG, gps_index: str = GPS_INDEX, gps_type: int = GPS_TYPE
+    ) -> ParseResult:
         try:
             temp_file: _TemporaryFileWrapper = create_temporary_file()
             start_time: float = time.perf_counter()
             mav: DFReader.DFReader_binary = DFReader.DFReader_binary(file_path)
             messages_number: int = 0
-            messages = []
+            messages: list = []
             app_msg = messages.append
             while True:
                 msg_raw: DFReader.DFMessage = mav.recv_match(blocking=False, type=[gps_msg])
@@ -106,7 +107,7 @@ class PymavlinkParser:
                 mav.close()
 
 
-def specific_gps_msg(original_msg: dict):
+def specific_gps_msg(original_msg: dict) -> dict[str, Any | None] | None:
     if original_msg["I"] == 1:
         keys_msg_to_keep = {"TimeUS", "Status", "Lat", "Lng", "Alt", "Spd"}
         new_dict = {key: original_msg.get(key, None) for key in keys_msg_to_keep}

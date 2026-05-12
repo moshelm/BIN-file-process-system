@@ -14,15 +14,15 @@ MAX_POINTS = 1000
 
 
 class DashboardController:
-    def __init__(self, view: DashboardView, config: ConfigJsonFile):
+    def __init__(self, view: DashboardView, config: ConfigJsonFile) -> None:
         self.view: DashboardView = view
         self.config: ConfigJsonFile = config
         self.api: ApiClient = ApiClient(config.bin_parser_gps)
 
-    def create_picker(self):
+    def create_picker(self) -> None:
         self.view.create_picker_files(self.handle_file_upload)
 
-    async def handle_file_upload(self, local_file_path: str):
+    async def handle_file_upload(self, local_file_path: str) -> None:
         try:
             gps_messages: GPSMessages | None = await self.api.upload_file_from_api(local_file_path)
 
@@ -30,18 +30,18 @@ class DashboardController:
                 self.view.show_error("No data found")
                 return
 
-            gps_messages: list[GPSMessageResult] = normalize_messages(gps_messages)
+            gps_messages_normalize: list[GPSMessageResult] = normalize_messages(gps_messages)
             self.view.show_success()
 
             try:
-                self.view.update_map(gps_messages, self.config.map_tile_url)
+                self.view.update_map(gps_messages_normalize, self.config.map_tile_url)
 
             except Exception as e:
                 logger.error(e)
                 self.view.show_error("Something went wrong with map")
 
             try:
-                self.view.create_table_view(gps_messages)
+                self.view.create_table_view(gps_messages_normalize)
 
             except Exception as e:
                 logger.error(e)
@@ -60,7 +60,7 @@ class DashboardController:
             self.view.show_error("Something went wrong")
 
 
-def normalize_messages(data: GPSMessages):
+def normalize_messages(data: GPSMessages) -> list[GPSMessageResult]:
     try:
         step = max(1, len(data.messages) // MAX_POINTS)
         return data.messages[::step]

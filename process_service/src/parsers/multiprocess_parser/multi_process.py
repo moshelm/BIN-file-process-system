@@ -4,7 +4,7 @@ import struct
 import tempfile
 import time
 from multiprocessing import Pool, cpu_count
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from process_service.src.parsers.multiprocess_parser.parse_file_config import ArduPilotParser
 from process_service.src.utils.file_handling import (
@@ -27,7 +27,7 @@ class ParseMultiprocess:
     SAFETY_MARGIN: int = 1024
     MSG_HEADER_PREFIX: bytes = b"\xa3\x95"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.parser_name = "multiprocess parser"
         self.information = "use in multi process"
 
@@ -41,7 +41,7 @@ class ParseMultiprocess:
         temp_dir: str,
     ) -> Tuple[str, int, List[int]]:
 
-        structs: List[Optional[struct.Struct]] = [struct.Struct(fmt) if fmt is not None else None for fmt in formats]
+        structs: List[Optional[struct.Struct]] = [struct.Struct(fmt) if fmt != -1 else None for fmt in formats]
         msgs: List[Tuple[int, Any]] = []
         wrong: List[int] = []
 
@@ -83,12 +83,12 @@ class ParseMultiprocess:
 
         return temp_filename, len(msgs), wrong
 
-    def parse_file(self, file_path: str, formats, lens) -> Tuple[int, str]:
+    def parse_file(self, file_path: str, formats: list[int], lens: list[int]) -> tuple[float, int, str]:
         try:
             size = get_size_file(file_path)
             temp_dir = tempfile.mkdtemp()
             start_time = time.perf_counter()
-            ranges: List[Tuple[str, List[Optional[str]], List[int], int, int, bytes, int, str]] = [
+            ranges: List[Tuple[str, List[int], List[int], int, int, str]] = [
                 (file_path, formats, lens, i, min(i + self.CHUNK_SIZE, size), temp_dir)
                 for i in range(0, size, self.CHUNK_SIZE)
             ]
@@ -118,23 +118,34 @@ class ParseMultiprocess:
 
         except Exception:
             logger.exception("parse file failed")
-            return None, 0, ""
+            return 0.0, 0, ""
 
     def parse(self, file_path: str, ardupilot_parser: ArduPilotParser) -> ParseResult:
+        try:
+            formats, lens = ardupilot_parser.get_formats_and_length_messages(file_path) or (None, None)
+            if formats is None or lens is None:
+                raise ValueError("some args are None")
 
-        formats, lens = ardupilot_parser.get_formats_and_length_messages(file_path)
-        duration, total_count, combined_file = self.parse_file(file_path, formats, lens)
-        remove_temp_file(combined_file)
+            duration, total_count, combined_file = self.parse_file(file_path, formats, lens)
+            remove_temp_file(combined_file)
 
-        return ParseResult(
-            parser_name=self.parser_name,
-            information=self.information,
-            duration=duration,
-            count=total_count + sum_msgs_formats(formats),
-            status=ParseStatus.SUCCESS,
-            file_path=combined_file,
-        )
+            return ParseResult(
+                parser_name=self.parser_name,
+                information=self.information,
+                duration=duration,
+                count=total_count + sum_msgs_formats(formats),
+                status=ParseStatus.SUCCESS,
+                file_path=combined_file,
+            )
+        except Exception:
+            logger.error("failed parse file")
+            return ParseResult(
+                parser_name=self.parser_name,
+                information=self.information,
+                status=ParseStatus.FAILED,
+                file_path=file_path,
+            )
 
 
-def sum_msgs_formats(formats: list):
+def sum_msgs_formats(formats: list) -> int:
     return len([fmt for fmt in formats if fmt is not None])

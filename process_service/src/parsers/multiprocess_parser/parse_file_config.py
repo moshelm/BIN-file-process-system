@@ -1,6 +1,6 @@
 import mmap
 import struct
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from shared.logger_config import get_logger
 
@@ -104,19 +104,24 @@ class ArduPilotParser:
             logger.exception("failed scan fmt messages")
             return {}
 
-    def _prepare_formats_and_lens(self, fmt_dict: dict[str, dict]) -> Tuple[List[Optional[str]], List[int]]:
-        formats: List[Optional[str]] = [None] * 256
-        lens: List[int] = [0] * 256
-        for msg_id, info in fmt_dict.items():
-            lens[msg_id] = info["length"]
-            if info.get("python_format"):
-                formats[msg_id] = info["python_format"]
+    def _prepare_formats_and_lens(self, fmt_dict: dict[int, dict]) -> Tuple[List[int], List[int]] | None:
+        try:
+            formats: List[int] = [-1] * 256
+            lens: List[int] = [0] * 256
+            for msg_id, info in fmt_dict.items():
+                lens[msg_id] = info["length"]
+                if info.get("python_format"):
+                    formats[msg_id] = info["python_format"]
 
-        return formats, lens
+            return formats, lens
+        except Exception:
+            logger.error("failed analyze formats and lans")
+            return None
 
-    def get_formats_and_length_messages(self, file_path: str) -> Tuple[List[Optional[str]], List[int]]:
+    def get_formats_and_length_messages(self, file_path: str) -> Tuple[List[int], List[int]] | None:
         try:
             fmt_dict = self.scan_fmt_messages(file_path)
             return self._prepare_formats_and_lens(fmt_dict)
         except Exception:
             logger.error("failed get configuration of file messages")
+            return None

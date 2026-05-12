@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def get_logger(file_name: str):
+def get_logger(file_name: str) -> logging.Logger:
 
     logger = logging.getLogger(file_name)
     if not logger.handlers:

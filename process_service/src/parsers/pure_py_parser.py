@@ -56,7 +56,7 @@ class PurePythonParser:
             logger.error("serialize failed", extra={"failed_format": decoded_format})
             raise
 
-    def extract_message_formats(self, binary_data: bytes) -> Dict[int, Dict[str, Any]]:
+    def extract_message_formats(self, binary_data: mmap.mmap) -> Dict[int, Dict[str, Any]]:
         try:
             formats: Dict[int, Dict[str, Any]] = {}
             search_offset: int = 0
@@ -74,7 +74,7 @@ class PurePythonParser:
 
                 type_id: int = payload[0]
                 message_length: int = payload[1]
-                raw_format: bytes = payload[6:22].rstrip(b"\x00").decode("ascii", "ignore")
+                raw_format: str = payload[6:22].rstrip(b"\x00").decode("ascii", "ignore")
                 try:
                     struct_obj: Optional[struct.Struct] = self.build_struct_from_format(raw_format)
                     formats[type_id] = {
@@ -89,14 +89,16 @@ class PurePythonParser:
                 except Exception:
                     pass
 
-                search_offset: int = magic_pos + 89
+                search_offset = magic_pos + 89
 
             return formats
         except Exception as e:
             logger.error(f"failed {str(e)}")
             raise
 
-    def scan_message_offsets(self, binary_data: bytes, formats: Dict[int, Dict[str, Any]]) -> List[List[int]]:
+    def scan_message_offsets(
+        self, binary_data: mmap.mmap, formats: Dict[int, Dict[str, Any]]
+    ) -> List[List[int]] | None:
         try:
             message_lengths: List[int] = [0] * 256
 
@@ -123,16 +125,17 @@ class PurePythonParser:
                         break
 
                     offsets_by_message_id[message_id].append(current_pos + 3)
-                    current_pos: int = find_magic(self.MAGIC_HEADER, message_end)
+                    current_pos = find_magic(self.MAGIC_HEADER, message_end)
                 else:
-                    current_pos: int = find_magic(self.MAGIC_HEADER, current_pos + 2)
+                    current_pos = find_magic(self.MAGIC_HEADER, current_pos + 2)
 
             return offsets_by_message_id
         except Exception:
             logger.error("scan messages offsets")
+            return None
 
     def decode_messages(
-        self, binary_data: bytes, offsets_by_message_id: List[List[int]], formats: Dict[int, Dict[str, Any]]
+        self, binary_data: mmap.mmap, offsets_by_message_id: List[List[int]], formats: Dict[int, Dict[str, Any]]
     ) -> int:
         try:
             total_messages: int = 0
@@ -144,9 +147,10 @@ class PurePythonParser:
                 format_info: Optional[Dict[str, struct.Struct | int | str]] = formats.get(message_id)
                 if not format_info:
                     continue
-
-                unpack_from = format_info["struct"].unpack_from
-
+                if isinstance(format_info["struct"], struct.Struct):
+                    unpack_from = format_info["struct"].unpack_from
+                else:
+                    raise ValueError("struct have to be Struct object")
                 total_messages += len(offsets)
 
                 for offset in offsets:
@@ -155,8 +159,9 @@ class PurePythonParser:
             return total_messages
         except Exception:
             logger.error("failed decoded")
+            return 0
 
-    def parse_file(self, file_path: str, specific_message: str | None = None) -> Dict[str, Any]:
+    def parse_file(self, file_path: str, specific_message: str | None = None) -> ParseResult:
         try:
             start_time: float = time.perf_counter()
 
@@ -167,7 +172,10 @@ class PurePythonParser:
                         specific_fmt = get_message_information_by_name(formats, specific_message)
                         formats = specific_fmt if specific_fmt is not None else formats
 
-                    offsets: List[List[int]] = self.scan_message_offsets(binary_data, formats)
+                    offsets: List[List[int]] | None = self.scan_message_offsets(binary_data, formats)
+                    if offsets is None:
+                        raise ValueError("Offsets cannot be None")
+
                     total_messages: int = self.decode_messages(binary_data, offsets, formats)
 
             duration: float = timer_calculate(start_time)
@@ -190,7 +198,9 @@ class PurePythonParser:
             )
 
 
-def get_message_information_by_name(formats: dict[str, dict], name_message: str):
+def get_message_information_by_name(
+    formats: dict[int, dict[str, Any]], name_message: str
+) -> dict[int, dict[str, Any]] | None:
     try:
         for msg_id, info in formats.items():
             if info.get("name", None) == name_message:
@@ -198,3 +208,4 @@ def get_message_information_by_name(formats: dict[str, dict], name_message: str)
         return None
     except Exception:
         logger.error("failed get information by name")
+        return None

@@ -1,15 +1,16 @@
 import flet as ft
 
-from shared.schemas import GPSMessageResult, GPSMessages
+from shared.schemas import GPSMessageResult
 
 
-def create_table(data: list[GPSMessageResult]):
-    columns = [ft.DataColumn(ft.Text(col, weight=ft.FontWeight.BOLD)) for col in GPSMessageResult.model_fields.keys()]
+def create_table(data: list[GPSMessageResult]) -> ft.Column:
+    columns = [
+        ft.DataColumn(label=ft.Text(col, weight=ft.FontWeight.BOLD)) for col in GPSMessageResult.model_fields.keys()
+    ]
 
     rows = []
 
     display_data = data
-    # TODO: same points with map not all points anyway
     for row in display_data:
         obj_row = row.model_dump()
         cells = [ft.DataCell(ft.Text(str(obj_row.get(col, "")))) for col in GPSMessageResult.model_fields.keys()]
