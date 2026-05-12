@@ -1,2 +1,7 @@
 # BIN-file-process-system-
-* run: docker compose up --build 
+* run:  bash `./run.sh`
+* down: bash `./down.sh`
+
+  
+*** mypy *** 
+run mypy . --exclude venv
