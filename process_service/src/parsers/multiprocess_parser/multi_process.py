@@ -41,7 +41,7 @@ class ParseMultiprocess:
         temp_dir: str,
     ) -> Tuple[str, int, List[int]]:
 
-        structs: List[Optional[struct.Struct]] = [struct.Struct(fmt) if fmt != -1 else None for fmt in formats]
+        structs: List[Optional[struct.Struct]] = [struct.Struct(fmt) if fmt else None for fmt in formats]
         msgs: List[Tuple[int, Any]] = []
         wrong: List[int] = []
 
@@ -83,12 +83,12 @@ class ParseMultiprocess:
 
         return temp_filename, len(msgs), wrong
 
-    def parse_file(self, file_path: str, formats: list[int], lens: list[int]) -> tuple[float, int, str]:
+    def parse_file(self, file_path: str, formats: list[str], lens: list[int]) -> tuple[float, int, str]:
         try:
             size = get_size_file(file_path)
             temp_dir = tempfile.mkdtemp()
             start_time = time.perf_counter()
-            ranges: List[Tuple[str, List[int], List[int], int, int, str]] = [
+            ranges: List[Tuple[str, List[str], List[int], int, int, str]] = [
                 (file_path, formats, lens, i, min(i + self.CHUNK_SIZE, size), temp_dir)
                 for i in range(0, size, self.CHUNK_SIZE)
             ]
@@ -147,5 +147,5 @@ class ParseMultiprocess:
             )
 
 
-def sum_msgs_formats(formats: list) -> int:
-    return len([fmt for fmt in formats if fmt is not None])
+def sum_msgs_formats(formats: list[str]) -> int:
+    return len([fmt for fmt in formats if fmt ])
