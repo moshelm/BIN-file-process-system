@@ -21,7 +21,7 @@ class ParseMultiprocess:
     MSG_HEADER_PREFIX: bytes = b"\xa3\x95"
 
     def __init__(self) -> None:
-        self.parser_name = "multiprocess parser"
+        self.parser_name = "multiprocess streaming parser"
         self.information = "use in multi process"
 
     def parse_chunk(
