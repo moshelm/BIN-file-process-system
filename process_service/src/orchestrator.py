@@ -1,7 +1,7 @@
 import asyncio
 from typing import AsyncGenerator
 
-from process_service.src.parsers.multiprocess_parser.multi_process import ArduPilotParser, ParseMultiprocess
+from process_service.src.parsers.multiprocess_parser.process_stream import ArduPilotParser, ParseMultiprocess
 from process_service.src.parsers.pure_py_parser import PurePythonParser
 from process_service.src.parsers.pymavlink_parser.process import PymavlinkParser
 from shared.logger_config import get_logger

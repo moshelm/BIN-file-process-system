@@ -1,25 +1,18 @@
 import mmap
-import os
 import struct
-import tempfile
 import time
 from multiprocessing import Pool, cpu_count
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from process_service.src.parsers.multiprocess_parser.parse_file_config import ArduPilotParser
-from process_service.src.utils.file_handling import (
-    combine_files_zero_copy,
-    get_size_file,
-    remove_temp_file,
-    write_to_temp_file_pickle,
-)
+from process_service.src.utils.file_handling import get_size_file, remove_temp_file
 from process_service.src.utils.helper import timer_calculate
 from shared.logger_config import get_logger
 from shared.schemas import ParseResult, ParseStatus
 
 logger = get_logger(__name__)
 
-CPU_AVAILABLE = min(1, cpu_count())
+CPU_AVAILABLE = max(1, cpu_count() - 1)
 
 
 class ParseMultiprocess:
@@ -38,19 +31,18 @@ class ParseMultiprocess:
         lens: List[int],
         start: int,
         end_original: int,
-        temp_dir: str,
-    ) -> Tuple[str, int, List[int]]:
+    ) -> Tuple[int, List[int]]:
 
         structs: List[Optional[struct.Struct]] = [struct.Struct(fmt) if fmt else None for fmt in formats]
-        msgs: List[Tuple[int, Any]] = []
         wrong: List[int] = []
+        count: int = 0
 
         with open(file_path, "rb") as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                 data_length: int = len(mm)
                 end_chunk: int = min(end_original + self.SAFETY_MARGIN, data_length)
                 index: int = start
-
+                c =190
                 while index < end_chunk:
                     position: int = mm.find(self.MSG_HEADER_PREFIX, index, end_chunk)
                     if position == -1 or position + 3 >= end_chunk:
@@ -75,46 +67,38 @@ class ParseMultiprocess:
 
                     struct_parser: Optional[struct.Struct] = structs[msg_type]
 
-                    if struct_parser is not None and position < end_original:
-                        msgs.append((msg_type, struct_parser.unpack_from(mm, position + 3)))
+                    if struct_parser is not None and position < end_original:   
+                        struct_parser.unpack_from(mm, position + 3)
+                        count += 1
 
                     index = msg_end
-        temp_filename = write_to_temp_file_pickle(temp_dir, msgs)
 
-        return temp_filename, len(msgs), wrong
+        return count, wrong
 
     def parse_file(self, file_path: str, formats: list[str], lens: list[int]) -> tuple[float, int, str]:
         try:
             size = get_size_file(file_path)
-            temp_dir = tempfile.mkdtemp()
             start_time = time.perf_counter()
             ranges: List[Tuple[str, List[str], List[int], int, int, str]] = [
-                (file_path, formats, lens, i, min(i + self.CHUNK_SIZE, size), temp_dir)
+                (file_path, formats, lens, i, min(i + self.CHUNK_SIZE, size))
                 for i in range(0, size, self.CHUNK_SIZE)
             ]
 
             with Pool(CPU_AVAILABLE) as p:
-                results: List[Tuple[str, int, List[int]]] = p.starmap(self.parse_chunk, ranges)
+                results: List[Tuple[int, List[int]]] = p.starmap(self.parse_chunk, ranges)
 
             duration = timer_calculate(start_time)
             total_count = 0
             cut_messages: List[int] = []
-            temp_files = []
 
-            for tmp_file, count, cut in results:
-                temp_files.append(tmp_file)
+            for count, cut in results:
                 total_count += count
                 cut_messages.extend(cut)
 
             if cut_messages:
                 logger.warning(f"cut messages: {len(cut_messages)}")
 
-            combined_file_path = f"{file_path}.parsed.pkl"
-
-            combine_files_zero_copy(combined_file_path, temp_files)
-            os.rmdir(temp_dir)
-
-            return duration, total_count, combined_file_path
+            return duration, total_count, ""
 
         except Exception:
             logger.exception("parse file failed")
@@ -127,7 +111,8 @@ class ParseMultiprocess:
                 raise ValueError("some args are None")
 
             duration, total_count, combined_file = self.parse_file(file_path, formats, lens)
-            remove_temp_file(combined_file)
+            if combined_file:
+                remove_temp_file(combined_file)
 
             return ParseResult(
                 parser_name=self.parser_name,
@@ -135,7 +120,7 @@ class ParseMultiprocess:
                 duration=duration,
                 count=total_count + sum_msgs_formats(formats),
                 status=ParseStatus.SUCCESS,
-                file_path=combined_file,
+                file_path=file_path,
             )
         except Exception:
             logger.error("failed parse file")
@@ -149,3 +134,7 @@ class ParseMultiprocess:
 
 def sum_msgs_formats(formats: list[str]) -> int:
     return len([fmt for fmt in formats if fmt ])
+
+if __name__=='__main__':
+    py = ParseMultiprocess()
+    print(py.parse('log_file_test_01.bin',ArduPilotParser()))
