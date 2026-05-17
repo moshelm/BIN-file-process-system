@@ -2,7 +2,8 @@ import mmap
 import struct
 import time
 from dataclasses import dataclass
-from typing import Dict,  List, Optional
+from typing import Dict, List, Optional, Any
+from collections import namedtuple
 
 from process_service.src.utils.helper import timer_calculate
 from shared.logger_config import get_logger
@@ -17,8 +18,8 @@ class MessageSchema:
     length: int
     struct: struct.Struct
     columns: list[str]
-    # אופטימיזציה: שמירת אינדקסים של עמודות שהן מחרוזות (bytes)
-    string_indices: list[int] 
+    string_indices: list[int]
+    msg_class: Any
 
 class PurePythonParser:
     FMT_STRUCT: struct.Struct = struct.Struct("<BB4s16s64s")
@@ -26,7 +27,6 @@ class PurePythonParser:
     FMT_HEADER: bytes = b"\xa3\x95\x80"
     MINIMAL_FILE_SIZE = 100
     
-    # מיפוי תווים של ArduPilot לפורמט Python Struct
     ARDU_TO_PYTHON_STRUCT: Dict[str, str] = {
         "a": "32s", "b": "b", "B": "B", "h": "h", "H": "H",
         "i": "i", "I": "I", "l": "i", "L": "i", "f": "f",
@@ -34,7 +34,6 @@ class PurePythonParser:
         "C": "H", "e": "i", "E": "I", "M": "B", "q": "q", "Q": "Q",
     }
     
-    # תווים שמייצגים מחרוזות ודורשים decode
     STRING_FORMAT_CHARS = {"a", "n", "N", "Z"}
 
     def __init__(self) -> None:
@@ -43,10 +42,6 @@ class PurePythonParser:
         self._struct_cache: Dict[str, tuple[struct.Struct, list[int]]] = {}
 
     def build_struct_from_format(self, decoded_format: str) -> tuple[struct.Struct, list[int]]:
-        """
-        בונה את ה-Struct ומזהה מראש אילו אינדקסים ב-Tuple שיתקבל הם מחרוזות.
-        זה מונע את הצורך בבדיקות isinstance בתוך הלולאה הראשית.
-        """
         if decoded_format in self._struct_cache:
             return self._struct_cache[decoded_format]
 
@@ -86,17 +81,21 @@ class PurePythonParser:
             raw_format: str = payload[6:22].rstrip(b"\x00").decode("ascii", "ignore")
             
             try:
-                # קבלת ה-Struct ואינדקסי המחרוזות
                 struct_obj, str_indices = self.build_struct_from_format(raw_format)
                 column_str = struct.Struct("64s").unpack_from(payload, 22)[0].rstrip(b"\x00").decode("ascii", "ignore")
                 
+                msg_name = payload[2:6].rstrip(b"\x00").decode("ascii", "ignore")
+                columns_list = [col for col in column_str.split(",") if col]
+                generated_class = namedtuple(f"Msg_{msg_name}", columns_list, rename=True) 
+
                 formats[type_id] = MessageSchema(
                     type_id=type_id,
-                    name=payload[2:6].rstrip(b"\x00").decode("ascii", "ignore"),
+                    name=msg_name,
                     length=payload[1],
                     struct=struct_obj,
                     string_indices=str_indices,
-                    columns=[col for col in column_str.split(",") if col],
+                    columns=columns_list,
+                    msg_class=generated_class 
                 )
             except Exception:
                 pass
@@ -104,15 +103,14 @@ class PurePythonParser:
             search_offset = magic_pos + 89
         return formats
 
-    def decode_messages(self, binary_data: mmap.mmap, formats: list[Optional[MessageSchema]], debug: bool = False, max_debug: int = 5) -> int:
-        total_messages: int = 0
+    def decode_messages(self, binary_data: mmap.mmap, formats: list[Optional[MessageSchema]], debug: bool = False, max_debug: int = 5) -> list:
         data_size: int = len(binary_data)
         find_magic = binary_data.find
         current_pos: int = find_magic(self.MAGIC_HEADER, 0)
         
-        # אופטימיזציה: קישור מקומי לפונקציית unpack_from חוסך חיפוש ב-Attribute Lookup
         unpack_from = struct.Struct.unpack_from
-
+        msgs_list = []
+        
         while current_pos != -1:
             if current_pos + 3 >= data_size:
                 break
@@ -122,42 +120,34 @@ class PurePythonParser:
             
             if fmt:
                 message_end = current_pos + fmt.length
-                if message_end <= data_size:
-                    total_messages += 1
-                    
-                    # פריקה מהירה של הנתונים הגולמיים
+                if message_end <= data_size:                    
                     unpacked_values = unpack_from(fmt.struct, binary_data, current_pos + 3)
                     
-                    # פענוח מחרוזות רק אם ה-Schema אומרת שיש כאלו
                     if fmt.string_indices:
-                        # הפיכה לרשימה רק לצורך מוטציה (שינוי ערכים)
                         vals_list = list(unpacked_values)
                         for idx in fmt.string_indices:
-                            v = vals_list[idx]
-                            # decode ו-rstrip רק על מה שאנחנו יודעים בוודאות שהוא bytes
+                            v :bytes = vals_list[idx]
                             vals_list[idx] = v.rstrip(b'\x00').decode('ascii', 'ignore')
                         processed_values = vals_list
                     else:
                         processed_values = unpacked_values
-
-                    # הדפסה של 5 ההודעות הראשונות בלבד לבקשתך
-                    if debug and total_messages <= max_debug:
-                        print(f"\n[MSG {total_messages}] Type: {fmt.name} (ID:{message_id})")
-                        # יצירת מילון רק לצרכי הדפסה ב-Debug
-                        data_dict = dict(zip(fmt.columns, processed_values))
-                        for key, val in data_dict.items():
-                            print(f"    {key:20} = {val!r}")
-                        if total_messages == max_debug:
-                            print(f"\n--- ממשיך בעיבוד מהיר של שאר הקובץ (ללא הדפסה) ---")
+                    
+                    msgs_list.append(fmt.msg_class(*processed_values))
+                    
+                    if debug and len(msgs_list) <= max_debug:
+                        print(f"\n[MSG {len(msgs_list)}] Type: {fmt.name} (ID:{message_id})")
+                        print(msgs_list[len(msgs_list)-1])                        
+                        if len(msgs_list) == max_debug:
+                            print(f"\n--- continuing fast processing of the rest of the file (no printing) ---")
 
                     current_pos = find_magic(self.MAGIC_HEADER, message_end)
                     continue
 
             current_pos = find_magic(self.MAGIC_HEADER, current_pos + 2)
 
-        return total_messages
+        return msgs_list 
 
-    def parse_file(self, file_path: str, specific_message: str | None = None, debug: bool = False) -> ParseResult:
+    def parse_file(self, file_path: str, specific_message: list[str] | None = None, debug: bool = False) -> ParseResult:
         try:
             start_time: float = time.perf_counter()
 
@@ -165,23 +155,35 @@ class PurePythonParser:
                 if file.seek(0, 2) == 0: raise ValueError("empty file")
                 file.seek(0)
                 with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as binary_data:
-                    formats = self.extract_message_formats(binary_data)
-                    total_messages = self.decode_messages(binary_data, formats, debug=debug, max_debug=190)
+                    formats :list[MessageSchema | None]= self.extract_message_formats(binary_data)
+
+                    if specific_message is not None:
+                        requested: list[str] = specific_message
+                        filtered = [None] * 256
+                        for name in requested:
+                            matched = [format for format in formats if format and format.name == name]
+                            if not matched:
+                                logger.error("specific message not found: %s", name)
+                                return ParseResult(self.parser_name, self.information, status=ParseStatus.FAILED, file_path=file_path)
+                            for format in matched:
+                                filtered[format.type_id] = format
+                        formats = filtered
+
+                    all_messages_list = self.decode_messages(binary_data, formats, debug=debug)
 
             return ParseResult(
                 parser_name=self.parser_name,
                 information=self.information,
                 duration=timer_calculate(start_time),
-                count=total_messages,
+                count=len(all_messages_list),
                 status=ParseStatus.SUCCESS,
                 file_path=file_path,
             )
-        except Exception:
-            logger.error("failed parse file")
+        except Exception as e:
+            logger.error(f"failed parse file: {e}")
             return ParseResult(self.parser_name, self.information, status=ParseStatus.FAILED, file_path=file_path)
 
 if __name__ == '__main__':
     py = PurePythonParser()
-    # הרץ עם debug=True כדי לראות את 5 ההודעות הראשונות מפוענחות
     result = py.parse_file('log_file_test_01.bin', debug=True)
-    print(f"\nסיכום: {result.count} הודעות עובדו ב-{result.duration:.2f} שניות.")
+    print(f"\nSummary: {result.count} messages processed in {result.duration:.2f} seconds.")
