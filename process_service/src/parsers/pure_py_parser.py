@@ -1,6 +1,7 @@
 import mmap
 import struct
 import time
+import gc
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 from collections import namedtuple
@@ -81,8 +82,8 @@ class PurePythonParser:
             raw_format: str = payload[6:22].rstrip(b"\x00").decode("ascii", "ignore")
             
             try:
-                struct_obj, str_indices = self.build_struct_from_format(raw_format)
-                column_str = struct.Struct("64s").unpack_from(payload, 22)[0].rstrip(b"\x00").decode("ascii", "ignore")
+                struct_obj , str_indices = self.build_struct_from_format(raw_format)
+                column_str : str = struct.Struct("64s").unpack_from(payload, 22)[0].rstrip(b"\x00").decode("ascii", "ignore")
                 
                 msg_name = payload[2:6].rstrip(b"\x00").decode("ascii", "ignore")
                 columns_list = [col for col in column_str.split(",") if col]
@@ -104,6 +105,7 @@ class PurePythonParser:
         return formats
 
     def decode_messages(self, binary_data: mmap.mmap, formats: list[Optional[MessageSchema]], debug: bool = False, max_debug: int = 5) -> list:
+        
         data_size: int = len(binary_data)
         find_magic = binary_data.find
         current_pos: int = find_magic(self.MAGIC_HEADER, 0)
@@ -111,41 +113,47 @@ class PurePythonParser:
         unpack_from = struct.Struct.unpack_from
         msgs_list = []
         
-        while current_pos != -1:
-            if current_pos + 3 >= data_size:
-                break
+        gc.disable()
+        try:
+            while current_pos != -1:
+                if current_pos + 3 >= data_size:
+                    break
 
-            message_id: int = binary_data[current_pos + 2]
-            fmt = formats[message_id] if message_id < 256 else None
-            
-            if fmt:
-                message_end = current_pos + fmt.length
-                if message_end <= data_size:                    
-                    unpacked_values = unpack_from(fmt.struct, binary_data, current_pos + 3)
-                    
-                    if fmt.string_indices:
-                        vals_list = list(unpacked_values)
-                        for idx in fmt.string_indices:
-                            v :bytes = vals_list[idx]
-                            vals_list[idx] = v.rstrip(b'\x00').decode('ascii', 'ignore')
-                        processed_values = vals_list
-                    else:
-                        processed_values = unpacked_values
-                    
-                    msgs_list.append(fmt.msg_class(*processed_values))
-                    
-                    if debug and len(msgs_list) <= max_debug:
-                        print(f"\n[MSG {len(msgs_list)}] Type: {fmt.name} (ID:{message_id})")
-                        print(msgs_list[len(msgs_list)-1])                        
-                        if len(msgs_list) == max_debug:
-                            print(f"\n--- continuing fast processing of the rest of the file (no printing) ---")
+                message_id: int = binary_data[current_pos + 2]
+                fmt = formats[message_id] if message_id < 256 else None
+                
+                if fmt:
+                    message_end = current_pos + fmt.length
+                    if message_end <= data_size:                    
+                        unpacked_values = unpack_from(fmt.struct, binary_data, current_pos + 3)
+                        
+                        if fmt.string_indices:
+                            vals_list = list(unpacked_values)
+                            for idx in fmt.string_indices:
+                                vals_list[idx] = vals_list[idx].rstrip(b'\x00').decode('ascii', 'ignore')
+                            processed_values = vals_list
+                        else:
+                            processed_values = unpacked_values
+                        
+                        msg_obj = fmt.msg_class(*processed_values)
+                        
+                        msgs_list.append(msg_obj)
+                        
+                        if debug and len(msgs_list) <= max_debug:
+                            print(f"\n[MSG {len(msgs_list)}] Type: {fmt.name} (ID:{message_id})")
+                            print(msg_obj)                        
+                            if len(msgs_list) == max_debug:
+                                print(f"\n--- continuing fast processing of the rest of the file (no printing) ---")
 
-                    current_pos = find_magic(self.MAGIC_HEADER, message_end)
-                    continue
+                        current_pos = find_magic(self.MAGIC_HEADER, message_end)
+                        continue
 
-            current_pos = find_magic(self.MAGIC_HEADER, current_pos + 2)
+                current_pos = find_magic(self.MAGIC_HEADER, current_pos + 2)
+                
+        finally:
+            gc.enable()
 
-        return msgs_list 
+        return msgs_list
 
     def parse_file(self, file_path: str, specific_message: list[str] | None = None, debug: bool = False) -> ParseResult:
         try:
