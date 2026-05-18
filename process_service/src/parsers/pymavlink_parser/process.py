@@ -24,14 +24,15 @@ class PymavlinkParser:
 
     def parse_only_by_pymavlink(self, file_path: str) -> ParseResult:
         try:
-            mav = DFReader.DFReader_binary(file_path)
-            messages_number = mav._count  # pylint: disable=protected-access
+            mav : DFReader.DFReader_binary = DFReader.DFReader_binary(file_path)
             start_time = time.perf_counter()
-
+            messages = []
             while True:
-                msg_raw = mav.recv_match(blocking=False)
+                msg_raw : DFReader.DFMessage= mav.recv_match(blocking=False)
                 if msg_raw is None:
                     break
+                msg : dict[str, int|str] = msg_raw.to_dict()
+                messages.append(msg)
 
             duration = timer_calculate(start_time)
 
@@ -39,7 +40,7 @@ class PymavlinkParser:
                 parser_name=self.parser_name,
                 information=self.information,
                 duration=duration,
-                count=messages_number,
+                count=len(messages),
                 status=ParseStatus.SUCCESS,
                 file_path=file_path,
             )
@@ -113,3 +114,8 @@ def specific_gps_msg(original_msg: dict) -> dict[str, Any | None] | None:
         new_dict = {key: original_msg.get(key, None) for key in keys_msg_to_keep}
         return new_dict
     return None
+
+if __name__ == '__main__':
+    py = PymavlinkParser()
+    result = py.parse_only_by_pymavlink('log_file_test_01.bin')
+    print(f"\nסיכום: {result.count} הודעות עובדו ב-{result.duration:.2f} שניות.")
